@@ -3,4 +3,9 @@ project(compilerV2)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(compilerV2 main.cpp)
+add_executable(compilerV2 main.cpp
+        Token.h
+        Lexer.cpp
+        Lexer.h
+        Parser.cpp
+        Parser.h)
