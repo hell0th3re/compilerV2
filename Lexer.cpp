@@ -1,41 +1,10 @@
 #include "Lexer.h"
 #include <iostream>
 #include <fstream>
-#include <ostream>
 
 using namespace std;
 
-void Lexer::readWords() {
-    char ch;
-    string buffer;
-
-    while (file.get(ch)) {
-
-        if (ch == ' ' || ch == ';' || ch == ':') {
-
-            // Save whatever word we've built so far
-            if (!buffer.empty()) {
-                words.push_back(buffer);
-                buffer.clear();
-            }
-
-            // If it's punctuation, save it as its own word
-            if (ch == ';' || ch == ':' || ch == ' ') {
-                words.push_back(string(1, ch));
-            }
-        }
-        else {
-            buffer += ch;
-        }
-    }
-
-    // Save the final word
-    if (!buffer.empty()) {
-        words.push_back(buffer);
-    }
-}
-
-bool Lexer::isIdentifier(string &word) {
+bool Lexer::isIdentifier(const string &word) {
 
     if (word.empty()) {
         return false;
@@ -54,84 +23,148 @@ bool Lexer::isIdentifier(string &word) {
     return true;
 }
 
-bool Lexer::isInteger(string &word) {
-
-    if (word.empty()) {
-        return false;
-    }
-
+bool Lexer::isInteger(const std::string &word) {
     for (int i = 0; i < word.length(); i++) {
         if (!isdigit(word[i])) {
             return false;
         }
     }
-
     return true;
 }
 
-bool Lexer::isChar(string &word) {
-
-    if (word.empty()) {
-        return false;
+TokenType Lexer::getTokenType(const string &tokenVal) {
+    if (keywords.contains(tokenVal)) {
+        TokenType tokenT = keywords.at(tokenVal);
+        return tokenT;
     }
+    cerr << "Invalid token type: " << tokenVal << endl;
+    return TokenType::Undefined;
+}
 
-
-    if (word.length() != 3) {
-        return false;
+TokenType Lexer::processWord(const string &word) {
+    Token token;
+    if (keywords.contains(word)) {
+        token.type = getTokenType(word);
     }
-
-    if (!(word[0] == '\'' && word[2] == '\'')) {
-        return false;
+    else if (isInteger(word)) {
+        token.type = TokenType::Integer;
     }
-
-    return true;
+    else if (isIdentifier(word)){
+        token.type = TokenType::Identifier;
+    }
+    else {
+        cerr << "Invalid token: " << word << endl;
+        return TokenType::Undefined;
+    }
+    return token.type;
 }
 
 void Lexer::tokenize() {
     Token token;
+    char ch;
+    string buffer;
+    string charBuff;
+    bool inChar = false;
+    int charIter = 0;
 
-    for (int i = 0; i < words.size(); i++) {
+    while (file.get(ch)) {
+        if (inChar) {
+            charBuff += ch;
 
-        if (keywords.contains(words[i])) {
-            TokenType type = keywords[words[i]];
-            token ={
-                .type = type,
-                .value = words[i]
-            };
-            tokens.push_back(token);
+            if (ch == '\'') {
+                token.type = TokenType::Character; //charLit
+                token.value = charBuff;
+                inChar = false;
+                tokens.push_back(token);
+                charBuff.clear();
+                buffer.clear();
+            }
+            if (charIter > 1) {
+                cerr << "char too long" << endl;
+                return;
+            }
+            charIter++;
+            continue;
+        }
+        if (ch == '\'') {
+            charIter = 0;
+            inChar = true;
+            charBuff += ch;
+            continue;
         }
 
-        else if (isIdentifier(words[i])) {
-            token = {
-                .type = TokenType::Identifier,
-                .value = words[i]
-            };
-            tokens.push_back(token);
+        if (isspace(ch)) {
+            if (!buffer.empty()) {
+
+                token.type = processWord(buffer);
+                if (token.type == TokenType::Undefined) {
+                    cerr << "Unknown token type: " << buffer << endl;
+                    return;
+                }
+
+                token.value = buffer;
+                tokens.push_back(token);
+                buffer.clear();
+            }
+            continue;
         }
 
-        else if (isInteger(words[i])) {
-            token = {
-                .type = TokenType::Integer,
-                .value = words[i]
-            };
+        bool isSeparator = (
+            ch == ';' ||
+            ch == ':' ||
+            ch == '=' ||
+            ch == '+' ||
+            ch == '-' ||
+            ch == '*'
+            );
+
+        if (isSeparator) {
+            // End of word by keyword seperator (instead of space)
+            if (!buffer.empty()) {
+                token.type = processWord(buffer);
+                if (token.type == TokenType::Undefined) {
+                    cerr << "Unknown token type: " << buffer << endl;
+                    return;
+                }
+
+                token.value = buffer;
+                tokens.push_back(token);
+                buffer.clear();
+            }
+
+            // Process the seperator token
+            string singleCharStr(1, ch);
+            token.type = getTokenType(singleCharStr);
+            token.value = singleCharStr;
             tokens.push_back(token);
         }
-
-        else if (isChar(words[i])) {
-            token = {
-                .type = TokenType::Character,
-                .value = words[i]
-            };
-            tokens.push_back(token);
+        else {
+            buffer += ch;
         }
     }
 
+    if (inChar) {
+        cerr << "unterminated character literal" << endl;
+    }
+
+    // Process the last word
+    if (!buffer.empty()) {
+        token.type = processWord(buffer);
+        if (token.type == TokenType::Undefined) {
+            cerr << "Unknown token type: " << buffer << endl;
+            return;
+        }
+
+        token.value = buffer;
+        tokens.push_back(token);
+    }
 }
+
+
 
 //public
 Lexer::Lexer(ifstream &file) {
     this -> file = std::move(file);
-    readWords();
     tokenize();
 }
 

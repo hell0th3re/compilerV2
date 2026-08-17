@@ -1,6 +1,4 @@
 #ifndef COMPILERV2_PARSER_H
 #define COMPILERV2_PARSER_H
 
-
-
 #endif //COMPILERV2_PARSER_H

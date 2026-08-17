@@ -2,7 +2,6 @@
 #define COMPILERV2_TOKEN_H
 
 #include <string>
-using namespace std;
 
 enum class TokenType {
     //Keywords
@@ -15,19 +14,23 @@ enum class TokenType {
     Character,
 
     //Operators
-    Assign,
+    Equals,
+    Add,
+    Subtract,
+    Multiply,
 
     //Punctuation
     Colon,
     Semicolon,
 
     //Other
-    Identifier
+    Identifier,
+    Undefined
 };
 
 struct Token {
     TokenType type;
-    string value;
+    std::string value;
 };
 
 #endif //COMPILERV2_TOKEN_H

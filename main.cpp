@@ -11,9 +11,6 @@ int main() {
     Lexer lexer(file);
     vector <Token> tokens = lexer.getTokens();
 
-    for (int i = 0; i < tokens.size(); i++) {
-        cout << tokens[i].value << endl;
-    }
     cout << endl;
 
     file.close();
