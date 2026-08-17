@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "Lexer.h"
+#include "Parser.h"
 
 using namespace std;
 
@@ -10,7 +11,7 @@ int main() {
 
     Lexer lexer(file);
     vector <Token> tokens = lexer.getTokens();
-
+    Parser parser(tokens);
     cout << endl;
 
     file.close();
