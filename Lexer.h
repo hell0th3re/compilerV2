@@ -27,9 +27,11 @@ class Lexer {
     static TokenType getTokenType(const std::string &tokenVal);
     static TokenType processWord(const std::string &word);
     void tokenize();
+    Token makeEofToken();
 
 public:
     Lexer(std::ifstream &file);
+    void lex();
     std::vector <Token> getTokens();
 };
 

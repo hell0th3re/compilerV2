@@ -160,11 +160,12 @@ void Lexer::tokenize() {
     }
 }
 
-
-
 //public
 Lexer::Lexer(ifstream &file) {
     this -> file = std::move(file);
+}
+
+void Lexer::lex() {
     tokenize();
 }
 
