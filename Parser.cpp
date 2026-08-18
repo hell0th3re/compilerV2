@@ -29,16 +29,15 @@ string Parser::tokenTypeToString(TokenType type) {
             return "Multiply";
         case TokenType::Semicolon:
             return "Semicolon";
+        case TokenType::Eof:
+            return "EOF";
         default:
             return "Undefined";
     }
 }
 
 const Token &Parser::peek() const{
-    if (!isAtEnd()) {
-        return tokens[current];
-    }
-    exit(1);
+    return tokens[current];
 }
 
 void Parser::advance(){
@@ -51,20 +50,11 @@ void Parser::advance(){
 }
 
 bool Parser::check(const TokenType type) const {
-    if (isAtEnd()) {
-        return false;
-    }
-    if (type == peek().type) {
-        return true;
-    }
-    return false;
+    return type == peek().type;
 }
 
 bool Parser::isAtEnd() const {
-    if (current >= tokens.size()) {
-        return true;
-    }
-    return false;
+    return peek().type == TokenType::Eof;
 }
 
 void Parser::consume(TokenType type){
@@ -75,8 +65,6 @@ void Parser::consume(TokenType type){
     else {
         cerr << "Expected: " << tokenTypeToString(type)
         << ", found: " << tokenTypeToString(peek().type) << endl;
-
-        cerr << "Syntax error" << endl;
         exit(1);
     }
 }
@@ -91,16 +79,16 @@ void Parser::parseStatement() {
     if (peek().type == TokenType::Let) {
         parseDeclaration();
     }
+    else if (peek().type == TokenType::Identifier) {
+        parseAssignment();
+    }
     else {
         cerr << "Unknown token" << endl;
         exit(1);
     }
 }
 
-
 void Parser::parseDeclaration() {
-
-    // Rn only checking variable declearations, not other types of statements
     Variable var;
     consume(TokenType::Let);
     if (check(TokenType::Identifier)) {
@@ -112,7 +100,6 @@ void Parser::parseDeclaration() {
 
     var.type = parseType();
     // parseType() now consumes the token as well
-    //consume(TokenType::Semicolon);
     consume(TokenType::Semicolon);
     variables.push_back(var);
 }
@@ -126,8 +113,33 @@ TokenType Parser::parseType(){
         consume(TokenType::CharType);
         return TokenType::CharType;
     }
-    cerr << "Undefined token type" << endl;
+    cerr << "Expected type, found " << tokenTypeToString(peek().type) << endl;
     exit(1);
+}
+
+void Parser::parseAssignment() {
+    Assignment assignment;
+    assignment.name = peek().value;
+    consume(TokenType::Identifier);
+    consume(TokenType::Equals);
+
+    if (check(TokenType::Integer)) {
+        assignment.type = peek().type;
+        assignment.value = stoi(peek().value);
+        advance();
+    }
+    else if (check(TokenType::Character)) {
+        assignment.type = peek().type;
+        assignment.value = peek().value[1];
+        advance();
+    }
+    else {
+        cerr << "Expected int or char literal, found " << tokenTypeToString(peek().type) << endl;
+        exit(1);
+    }
+
+    consume(TokenType::Semicolon);
+    assignments.push_back(assignment);
 }
 
 //public
@@ -139,7 +151,10 @@ void Parser::parse() {
     parseProgram();
 }
 
-
 const std::vector<Variable> &Parser::getVariables() const{
     return variables;
+}
+
+const std::vector<Assignment> &Parser::getAssignments() const{
+    return assignments;
 }

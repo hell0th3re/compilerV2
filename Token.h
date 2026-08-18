@@ -25,7 +25,8 @@ enum class TokenType {
 
     //Other
     Identifier,
-    Undefined
+    Undefined,
+    Eof
 };
 
 struct Token {

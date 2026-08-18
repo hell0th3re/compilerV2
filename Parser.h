@@ -1,5 +1,6 @@
 #ifndef COMPILERV2_PARSER_H
 #define COMPILERV2_PARSER_H
+#include <variant>
 #include <vector>
 #include "Token.h"
 
@@ -8,10 +9,17 @@ struct Variable {
     TokenType type;
 };
 
+struct Assignment {
+    std::string name;
+    TokenType type;
+    std::variant <int,char> value;
+};
+
 class Parser {
     std::vector <Token> tokens;
     size_t current = 0;
     std::vector <Variable> variables;
+    std::vector <Assignment> assignments;
     static std::string tokenTypeToString(TokenType type);
     [[nodiscard]] bool isAtEnd() const;
     [[nodiscard]] const Token &peek() const;
@@ -21,12 +29,14 @@ class Parser {
     void parseProgram();
     void parseStatement();
     void parseDeclaration();
+    void parseAssignment();
     TokenType parseType();
 
 public:
     explicit Parser(const std::vector <Token> &toks);
     void parse();
     [[nodiscard]] const std::vector <Variable> &getVariables() const;
+    [[nodiscard]] const std::vector <Assignment> &getAssignments() const;
 };
 
 #endif //COMPILERV2_PARSER_H

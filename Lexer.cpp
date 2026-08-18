@@ -158,6 +158,9 @@ void Lexer::tokenize() {
         token.value = buffer;
         tokens.push_back(token);
     }
+    Token eofTok;
+    eofTok.type = TokenType::Eof;
+    tokens.push_back(eofTok);
 }
 
 //public
