@@ -175,7 +175,3 @@ vector <Token> Lexer::lex() {
     tokenize();
     return tokens;
 }
-
-// vector <Token> Lexer::getTokens() {
-//     return tokens;
-// }

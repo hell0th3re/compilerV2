@@ -34,7 +34,6 @@ class Lexer {
 public:
     Lexer(std::ifstream &file);
     std::vector <Token> lex();
-     //std::vector <Token>getTokens();
 };
 
 #endif //COMPILERV2_LEXER_H

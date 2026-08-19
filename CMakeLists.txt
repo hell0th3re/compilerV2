@@ -8,4 +8,6 @@ add_executable(compilerV2 main.cpp
         Lexer.cpp
         Lexer.h
         Parser.cpp
-        Parser.h)
+        Parser.h
+        semanticAnalyzer.cpp
+        semanticAnalyzer.h)

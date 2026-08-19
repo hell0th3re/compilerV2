@@ -2,6 +2,7 @@
 #include <fstream>
 #include "Lexer.h"
 #include "Parser.h"
+#include "semanticAnalyzer.h"
 
 using namespace std;
 
@@ -13,6 +14,10 @@ int main() {
     vector <Token> tokens = lexer.lex();
     Parser parser(tokens);
     Program prog = parser.parse();
+    cout << " ";
+    SemanticAnalyzer semanticAnalyzer(std::move(prog));
+
+    Program prog2 = semanticAnalyzer.analyze();
     cout << endl;
 
     file.close();

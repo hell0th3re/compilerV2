@@ -19,7 +19,7 @@ struct BinaryExpression {
 };
 
 struct Expression {
-    std::variant<int,char, std::string, std::unique_ptr<BinaryExpression>> value;
+    std::variant<int, char, std::string, std::unique_ptr<BinaryExpression>> value;
 };
 
 struct Assignment {
@@ -42,7 +42,6 @@ class Parser {
     Program program;
     std::vector <Token> tokens;
     size_t current = 0;
-    static std::string tokenTypeToString(TokenType type);
     [[nodiscard]] bool isAtEnd() const;
     [[nodiscard]] const Token &peek() const;
     void advance();
