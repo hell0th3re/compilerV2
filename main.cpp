@@ -15,7 +15,7 @@ int main() {
     Parser parser(tokens);
     parser.parse();
     vector <Variable> vars = parser.getVariables();
-    vector <Assignment> assignments = parser.getAssignments();
+    //vector <Assignment> assignments = parser.getAssignments();
     cout << endl;
 
     file.close();

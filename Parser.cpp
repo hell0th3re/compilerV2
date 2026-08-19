@@ -49,6 +49,19 @@ void Parser::advance(){
     }
 }
 
+bool Parser::isOperator() const {
+    switch (peek().type) {
+        case TokenType::Add:
+            return true;
+        case TokenType::Subtract:
+            return true;
+        case TokenType::Multiply:
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool Parser::check(const TokenType type) const {
     return type == peek().type;
 }
@@ -73,6 +86,7 @@ void Parser::parseProgram(){
     while (!isAtEnd()) {
         parseStatement();
     }
+    cout << " ";
 }
 
 void Parser::parseStatement() {
@@ -119,27 +133,83 @@ TokenType Parser::parseType(){
 
 void Parser::parseAssignment() {
     Assignment assignment;
+
     assignment.name = peek().value;
     consume(TokenType::Identifier);
     consume(TokenType::Equals);
 
+    assignment.value = parseExpression();
+
+    consume(TokenType::Semicolon);
+    assignments.push_back(std::move(assignment));
+}
+
+Expression Parser::parseExpression() {
+    Expression left = parseTerm();
+
+    while (check(TokenType::Add) || check(TokenType::Subtract)) {
+        TokenType opType = peek().type;
+
+        consume(opType);
+        Expression right = parseTerm();
+
+        auto binary = std::make_unique<BinaryExpression>();
+
+        binary->op = opType;
+        binary->left = std::make_unique<Expression>(std::move(left));
+        binary->right = std::make_unique<Expression>(std::move(right));
+
+        Expression result;
+        result.value = std::move(binary);
+
+        left = std::move(result);
+    }
+
+    return left;
+}
+
+Expression Parser::parseTerm() {
+    Expression left = parseFactor();
+
+    while (check(TokenType::Multiply)) {
+        consume(TokenType::Multiply);
+        Expression right = parseFactor();
+
+        auto binary = std::make_unique<BinaryExpression>();
+
+        binary->op = TokenType::Multiply;
+        binary->left = std::make_unique<Expression>(std::move(left));
+        binary->right = std::make_unique<Expression>(std::move(right));
+
+        Expression result;
+        result.value = std::move(binary);
+
+        left = std::move(result);
+    }
+    return left;
+}
+
+Expression Parser::parseFactor() {
+    Expression result;
+
     if (check(TokenType::Integer)) {
-        assignment.type = peek().type;
-        assignment.value = stoi(peek().value);
+        result.value = stoi(peek().value);
         advance();
     }
     else if (check(TokenType::Character)) {
-        assignment.type = peek().type;
-        assignment.value = peek().value[1];
+        result.value = peek().value[1];
+        advance();
+    }
+    else if (check(TokenType::Identifier)) {
+        result.value = peek().value;
         advance();
     }
     else {
-        cerr << "Expected int or char literal, found " << tokenTypeToString(peek().type) << endl;
+        cerr << "Expected int literal, char literal, or identifier, found "
+        << tokenTypeToString(peek().type) << endl;
         exit(1);
     }
-
-    consume(TokenType::Semicolon);
-    assignments.push_back(assignment);
+    return result;
 }
 
 //public

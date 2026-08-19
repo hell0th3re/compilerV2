@@ -18,6 +18,7 @@ enum class TokenType {
     Add,
     Subtract,
     Multiply,
+    Divide,
 
     //Punctuation
     Colon,
