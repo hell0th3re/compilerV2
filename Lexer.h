@@ -17,6 +17,9 @@ class Lexer {
         {"+", TokenType::Add},
         {"-", TokenType::Subtract},
         {"*", TokenType::Multiply},
+        {"/", TokenType::Divide},
+        {"(", TokenType::OpenParen},
+        {")", TokenType::CloseParen},
         {"int", TokenType::IntType},
         {"char", TokenType::CharType},
         {":", TokenType::Colon},
@@ -30,8 +33,8 @@ class Lexer {
 
 public:
     Lexer(std::ifstream &file);
-    void lex();
-    std::vector <Token> getTokens();
+    std::vector <Token> lex();
+     //std::vector <Token>getTokens();
 };
 
 #endif //COMPILERV2_LEXER_H

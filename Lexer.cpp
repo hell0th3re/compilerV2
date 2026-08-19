@@ -115,7 +115,10 @@ void Lexer::tokenize() {
             ch == '=' ||
             ch == '+' ||
             ch == '-' ||
-            ch == '*'
+            ch == '*' ||
+            ch == '/' ||
+            ch == '(' ||
+            ch == ')'
             );
 
         if (isSeparator) {
@@ -168,10 +171,11 @@ Lexer::Lexer(ifstream &file) {
     this -> file = std::move(file);
 }
 
-void Lexer::lex() {
+vector <Token> Lexer::lex() {
     tokenize();
-}
-
-vector <Token> Lexer::getTokens() {
     return tokens;
 }
+
+// vector <Token> Lexer::getTokens() {
+//     return tokens;
+// }

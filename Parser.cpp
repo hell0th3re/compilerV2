@@ -27,6 +27,12 @@ string Parser::tokenTypeToString(TokenType type) {
             return "Subtract";
         case TokenType::Multiply:
             return "Multiply";
+        case TokenType::Divide:
+            return "Divide";
+        case TokenType::OpenParen:
+            return "OpenParen";
+        case TokenType::CloseParen:
+            return "CloseParen";
         case TokenType::Semicolon:
             return "Semicolon";
         case TokenType::Eof:
@@ -46,19 +52,6 @@ void Parser::advance(){
     }
     else {
         exit(1);
-    }
-}
-
-bool Parser::isOperator() const {
-    switch (peek().type) {
-        case TokenType::Add:
-            return true;
-        case TokenType::Subtract:
-            return true;
-        case TokenType::Multiply:
-            return true;
-        default:
-            return false;
     }
 }
 
@@ -84,26 +77,29 @@ void Parser::consume(TokenType type){
 
 void Parser::parseProgram(){
     while (!isAtEnd()) {
-        parseStatement();
+        Statement statement = parseStatement();
+        program.statements.push_back(std::move(statement));
     }
-    cout << " ";
 }
 
-void Parser::parseStatement() {
+Statement Parser::parseStatement() {
+    Statement statement;
     if (peek().type == TokenType::Let) {
-        parseDeclaration();
+        statement = parseDeclaration();
     }
     else if (peek().type == TokenType::Identifier) {
-        parseAssignment();
+        statement = parseAssignment();
     }
     else {
         cerr << "Unknown token" << endl;
         exit(1);
     }
+    return statement;
 }
 
-void Parser::parseDeclaration() {
-    Variable var;
+Statement Parser::parseDeclaration() {
+    Statement statement;
+    VariableDeclaration var;
     consume(TokenType::Let);
     if (check(TokenType::Identifier)) {
         var.name = peek().value;
@@ -115,7 +111,10 @@ void Parser::parseDeclaration() {
     var.type = parseType();
     // parseType() now consumes the token as well
     consume(TokenType::Semicolon);
-    variables.push_back(var);
+
+    statement.value = var;
+    return statement;
+    //program.statements.push_back(std::move(statement));
 }
 
 TokenType Parser::parseType(){
@@ -131,7 +130,8 @@ TokenType Parser::parseType(){
     exit(1);
 }
 
-void Parser::parseAssignment() {
+Statement Parser::parseAssignment() {
+    Statement statement;
     Assignment assignment;
 
     assignment.name = peek().value;
@@ -141,7 +141,10 @@ void Parser::parseAssignment() {
     assignment.value = parseExpression();
 
     consume(TokenType::Semicolon);
-    assignments.push_back(std::move(assignment));
+
+    statement.value = std::move(assignment);
+    return statement;
+    //program.statements.push_back(std::move(statement));
 }
 
 Expression Parser::parseExpression() {
@@ -171,13 +174,14 @@ Expression Parser::parseExpression() {
 Expression Parser::parseTerm() {
     Expression left = parseFactor();
 
-    while (check(TokenType::Multiply)) {
-        consume(TokenType::Multiply);
-        Expression right = parseFactor();
+    while (check(TokenType::Multiply) || check(TokenType::Divide)) {
+        TokenType opType = peek().type;
+        consume(opType);
 
+        Expression right = parseFactor();
         auto binary = std::make_unique<BinaryExpression>();
 
-        binary->op = TokenType::Multiply;
+        binary->op = opType;
         binary->left = std::make_unique<Expression>(std::move(left));
         binary->right = std::make_unique<Expression>(std::move(right));
 
@@ -186,13 +190,18 @@ Expression Parser::parseTerm() {
 
         left = std::move(result);
     }
+
     return left;
 }
 
 Expression Parser::parseFactor() {
     Expression result;
-
-    if (check(TokenType::Integer)) {
+    if (check(TokenType::OpenParen)) {
+        consume(TokenType::OpenParen);
+        result = parseExpression();
+        consume(TokenType::CloseParen);
+    }
+    else if (check(TokenType::Integer)) {
         result.value = stoi(peek().value);
         advance();
     }
@@ -205,7 +214,7 @@ Expression Parser::parseFactor() {
         advance();
     }
     else {
-        cerr << "Expected int literal, char literal, or identifier, found "
+        cerr << "Expected expression, found "
         << tokenTypeToString(peek().type) << endl;
         exit(1);
     }
@@ -217,14 +226,7 @@ Parser::Parser(const std::vector <Token> &toks) {
     this->tokens = toks;
 }
 
-void Parser::parse() {
+Program Parser::parse() {
     parseProgram();
-}
-
-const std::vector<Variable> &Parser::getVariables() const{
-    return variables;
-}
-
-const std::vector<Assignment> &Parser::getAssignments() const{
-    return assignments;
+    return std::move(program);
 }

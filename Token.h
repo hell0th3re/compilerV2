@@ -20,6 +20,9 @@ enum class TokenType {
     Multiply,
     Divide,
 
+    OpenParen,
+    CloseParen,
+
     //Punctuation
     Colon,
     Semicolon,

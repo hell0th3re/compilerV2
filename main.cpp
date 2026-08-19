@@ -10,12 +10,9 @@ int main() {
     file.open("../file.hi");
 
     Lexer lexer(file);
-    lexer.lex();
-    vector <Token> tokens = lexer.getTokens();
+    vector <Token> tokens = lexer.lex();
     Parser parser(tokens);
-    parser.parse();
-    vector <Variable> vars = parser.getVariables();
-    //vector <Assignment> assignments = parser.getAssignments();
+    Program prog = parser.parse();
     cout << endl;
 
     file.close();
