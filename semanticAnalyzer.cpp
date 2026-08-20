@@ -76,7 +76,16 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
         const Expression &rightValue = *binary.right;
         TokenType opType = binary.op;
 
+        if (opType == TokenType::Equals) {
+            return TokenType::BoolType;
+        }
+
         if (opType == TokenType::GreaterThan || opType == TokenType::LessThan) {
+            //right and left expressions will be of the same type at this point
+            if (getExpressionType(rightValue) == TokenType::BoolType) {
+                cerr << "Bool comparison is not supported" << endl;
+                exit(1);
+            }
             return TokenType::BoolType;
         }
 

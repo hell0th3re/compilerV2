@@ -68,6 +68,7 @@ void Lexer::tokenize() {
     int charIter = 0;
 
     while (file.get(ch)) {
+
         if (inChar) {
             charBuff += ch;
 
@@ -124,7 +125,6 @@ void Lexer::tokenize() {
             );
 
         if (isSeparator) {
-            // End of word by keyword seperator (instead of space)
             if (!buffer.empty()) {
                 token.type = processWord(buffer);
                 if (token.type == TokenType::Undefined) {
@@ -135,6 +135,15 @@ void Lexer::tokenize() {
                 token.value = buffer;
                 tokens.push_back(token);
                 buffer.clear();
+            }
+            // End of word by keyword seperator (instead of space)
+            if (ch == '=' && file.peek() == '=') {
+                string op = "==";
+                token.value = op;
+                token.type = getTokenType(op);
+                tokens.push_back(token);
+                file.get();
+                continue;
             }
 
             // Process the seperator token
@@ -150,6 +159,7 @@ void Lexer::tokenize() {
 
     if (inChar) {
         cerr << "unterminated character literal" << endl;
+        exit(1);
     }
 
     // Process the last word

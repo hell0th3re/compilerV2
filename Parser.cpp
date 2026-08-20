@@ -96,22 +96,48 @@ TokenType Parser::parseType(){
 }
 
 Statement Parser::parseAssignment() {
+
     Statement statement;
     Assignment assignment;
 
     assignment.name = peek().value;
     consume(TokenType::Identifier);
-    consume(TokenType::Equals);
+    consume(TokenType::Assign);
 
-    assignment.value = parseComparison();
-
+    assignment.value = parseEquality();
+    cout << " ";
     consume(TokenType::Semicolon);
 
     statement.value = std::move(assignment);
     return statement;
 }
 
+Expression Parser::parseEquality() {
+    Expression left = parseComparison();
+
+
+    while (check(TokenType::Equals)) {;
+
+        consume(TokenType::Equals);
+        Expression right = parseComparison();
+
+        auto binary = std::make_unique<BinaryExpression>();
+
+        binary->op = TokenType::Equals;
+        binary->left = std::make_unique<Expression>(std::move(left));
+        binary->right = std::make_unique<Expression>(std::move(right));
+
+        Expression result;
+        result.value = std::move(binary);
+
+        left = std::move(result);
+    }
+
+    return left;
+}
+
 Expression Parser::parseComparison() {
+
     Expression left = parseExpression();
 
     while (check(TokenType::GreaterThan) || check(TokenType::LessThan)) {
@@ -137,6 +163,7 @@ Expression Parser::parseComparison() {
 }
 
 Expression Parser::parseExpression() {
+
     Expression left = parseTerm();
 
     while (check(TokenType::Add) || check(TokenType::Subtract)) {
@@ -162,6 +189,7 @@ Expression Parser::parseExpression() {
 }
 
 Expression Parser::parseTerm() {
+
     Expression left = parseFactor();
 
     while (check(TokenType::Multiply) || check(TokenType::Divide)) {
@@ -188,10 +216,11 @@ Expression Parser::parseFactor() {
     Expression result;
     if (check(TokenType::OpenParen)) {
         consume(TokenType::OpenParen);
-        result = parseComparison();
+        result = parseEquality();
         consume(TokenType::CloseParen);
     }
     else if (check(TokenType::Integer)) {
+
         result.value = stoi(peek().value);
         advance();
     }

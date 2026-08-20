@@ -16,14 +16,14 @@ enum class TokenType {
     Boolean,
 
     //Operators
-    Equals,
+    Assign,
     Add,
     Subtract,
     Multiply,
     Divide,
     GreaterThan,
     LessThan,
-    EqualTo,
+    Equals,
 
     OpenParen,
     CloseParen,
@@ -54,6 +54,8 @@ inline std::string tokenTypeToString(TokenType type) { //maybe should be inline,
             return "BoolType";
         case TokenType::Colon:
             return "Colon";
+        case TokenType::Assign:
+            return "Assign";
         case TokenType::Equals:
             return "Equals";
         case TokenType::Let:
