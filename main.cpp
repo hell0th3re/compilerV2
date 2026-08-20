@@ -12,6 +12,7 @@ int main() {
 
     Lexer lexer(file);
     vector <Token> tokens = lexer.lex();
+    cout << " ";
     Parser parser(tokens);
     Program prog = parser.parse();
     cout << " ";

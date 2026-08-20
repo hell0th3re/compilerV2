@@ -1,8 +1,8 @@
 #ifndef COMPILERV2_SEMANTICANALYZER_H
 #define COMPILERV2_SEMANTICANALYZER_H
 #include <map>
-
 #include "Parser.h"
+
 
 class SemanticAnalyzer {
     Program program;

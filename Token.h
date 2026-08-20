@@ -8,10 +8,12 @@ enum class TokenType {
     Let,
     IntType,
     CharType,
+    BoolType,
 
     //Literials
     Integer,
     Character,
+    Boolean,
 
     //Operators
     Equals,
@@ -19,6 +21,8 @@ enum class TokenType {
     Subtract,
     Multiply,
     Divide,
+    GreaterThan,
+    LessThan,
 
     OpenParen,
     CloseParen,
@@ -45,6 +49,8 @@ inline std::string tokenTypeToString(TokenType type) { //maybe should be inline,
             return "IntType";
         case TokenType::CharType:
             return "CharType";
+        case TokenType::BoolType:
+            return "BoolType";
         case TokenType::Colon:
             return "Colon";
         case TokenType::Equals:

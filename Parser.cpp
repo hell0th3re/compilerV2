@@ -86,6 +86,11 @@ TokenType Parser::parseType(){
         consume(TokenType::CharType);
         return TokenType::CharType;
     }
+    if (check(TokenType::BoolType)) {
+        consume(TokenType::BoolType);
+        return TokenType::BoolType;
+    }
+
     cerr << "Expected type, found " << tokenTypeToString(peek().type) << endl;
     exit(1);
 }
@@ -109,7 +114,9 @@ Statement Parser::parseAssignment() {
 Expression Parser::parseExpression() {
     Expression left = parseTerm();
 
-    while (check(TokenType::Add) || check(TokenType::Subtract)) {
+    while (check(TokenType::Add) || check(TokenType::Subtract) ||
+        check(TokenType::GreaterThan) || check(TokenType::LessThan)) {
+
         TokenType opType = peek().type;
 
         consume(opType);
@@ -166,6 +173,15 @@ Expression Parser::parseFactor() {
     }
     else if (check(TokenType::Character)) {
         result.value = peek().value[1];
+        advance();
+    }
+    else if (check(TokenType::Boolean)) {
+        if (peek().value == "true") {
+            result.value = true;
+        }
+        else if (peek().value == "false") {
+            result.value = false;
+        }
         advance();
     }
     else if (check(TokenType::Identifier)) {

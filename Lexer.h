@@ -20,8 +20,13 @@ class Lexer {
         {"/", TokenType::Divide},
         {"(", TokenType::OpenParen},
         {")", TokenType::CloseParen},
+        {">", TokenType::GreaterThan},
+        {"<", TokenType::LessThan},
         {"int", TokenType::IntType},
         {"char", TokenType::CharType},
+        {"bool", TokenType::BoolType},
+        {"true", TokenType::Boolean},
+        {"false", TokenType::Boolean},
         {":", TokenType::Colon},
         {";", TokenType::Semicolon}
     };

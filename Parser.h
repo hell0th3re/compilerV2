@@ -19,7 +19,7 @@ struct BinaryExpression {
 };
 
 struct Expression {
-    std::variant<int, char, std::string, std::unique_ptr<BinaryExpression>> value;
+    std::variant<int, char, bool, std::string, std::unique_ptr<BinaryExpression>> value;
 };
 
 struct Assignment {
