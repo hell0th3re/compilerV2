@@ -22,6 +22,7 @@ class Lexer {
         {")", TokenType::CloseParen},
         {">", TokenType::GreaterThan},
         {"<", TokenType::LessThan},
+        {"==", TokenType::EqualTo},
         {"int", TokenType::IntType},
         {"char", TokenType::CharType},
         {"bool", TokenType::BoolType},

@@ -23,6 +23,7 @@ enum class TokenType {
     Divide,
     GreaterThan,
     LessThan,
+    EqualTo,
 
     OpenParen,
     CloseParen,

@@ -39,6 +39,7 @@ void SemanticAnalyzer::process() {
             }
         }
     }
+    cout << " ";
 }
 
 TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {

@@ -103,7 +103,7 @@ Statement Parser::parseAssignment() {
     consume(TokenType::Identifier);
     consume(TokenType::Equals);
 
-    assignment.value = parseExpression();
+    assignment.value = parseComparison();
 
     consume(TokenType::Semicolon);
 
@@ -111,11 +111,35 @@ Statement Parser::parseAssignment() {
     return statement;
 }
 
+Expression Parser::parseComparison() {
+    Expression left = parseExpression();
+
+    while (check(TokenType::GreaterThan) || check(TokenType::LessThan)) {
+
+        TokenType opType = peek().type;
+
+        consume(opType);
+        Expression right = parseExpression();
+
+        auto binary = std::make_unique<BinaryExpression>();
+
+        binary->op = opType;
+        binary->left = std::make_unique<Expression>(std::move(left));
+        binary->right = std::make_unique<Expression>(std::move(right));
+
+        Expression result;
+        result.value = std::move(binary);
+
+        left = std::move(result);
+    }
+
+    return left;
+}
+
 Expression Parser::parseExpression() {
     Expression left = parseTerm();
 
-    while (check(TokenType::Add) || check(TokenType::Subtract) ||
-        check(TokenType::GreaterThan) || check(TokenType::LessThan)) {
+    while (check(TokenType::Add) || check(TokenType::Subtract)) {
 
         TokenType opType = peek().type;
 
@@ -164,7 +188,7 @@ Expression Parser::parseFactor() {
     Expression result;
     if (check(TokenType::OpenParen)) {
         consume(TokenType::OpenParen);
-        result = parseExpression();
+        result = parseComparison();
         consume(TokenType::CloseParen);
     }
     else if (check(TokenType::Integer)) {

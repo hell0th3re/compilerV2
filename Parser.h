@@ -51,6 +51,7 @@ class Parser {
     Statement parseStatement();
     Statement parseDeclaration();
     Statement parseAssignment();
+    Expression parseComparison();
     Expression parseExpression();
     Expression parseTerm();
     Expression parseFactor();
