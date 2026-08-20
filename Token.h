@@ -24,6 +24,8 @@ enum class TokenType {
     GreaterThan,
     LessThan,
     Equals,
+    NotEquals,
+    Not,
 
     OpenParen,
     CloseParen,
@@ -58,6 +60,10 @@ inline std::string tokenTypeToString(TokenType type) { //maybe should be inline,
             return "Assign";
         case TokenType::Equals:
             return "Equals";
+        case TokenType::NotEquals:
+            return "NotEquals";
+        case TokenType::Not:
+            return "Not";
         case TokenType::Let:
             return "Let";
         case TokenType::Add:

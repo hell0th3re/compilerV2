@@ -61,6 +61,19 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
         cerr << name << " was not declared" << endl;
         exit(1);
     }
+
+    if (holds_alternative<std::unique_ptr<UnaryExpression>>(expression.value)) {
+
+        const UnaryExpression &unary = *std::get<std::unique_ptr<UnaryExpression>>(expression.value);
+        TokenType operandType = getExpressionType(*unary.operand);
+
+        if (unary.op == TokenType::Not && operandType == TokenType::BoolType) {
+            return TokenType::BoolType;
+        }
+        cerr << "Expression error: negation of a non-bool value" << endl;
+        exit(1);
+    }
+
     if (holds_alternative<std::unique_ptr<BinaryExpression>>(expression.value)) {
         const BinaryExpression &binary = *std::get<std::unique_ptr<BinaryExpression>>(expression.value);
 
@@ -72,11 +85,11 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
             exit(1);
         }
 
-        //Expression &leftValue = *binary.left;
+        const Expression &leftValue = *binary.left;
         const Expression &rightValue = *binary.right;
         TokenType opType = binary.op;
 
-        if (opType == TokenType::Equals) {
+        if (opType == TokenType::Equals || opType == TokenType::NotEquals) {
             return TokenType::BoolType;
         }
 
@@ -106,8 +119,26 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
             exit(1);
         }
 
+        if (holds_alternative<std::unique_ptr<UnaryExpression>>(rightValue.value) &&
+            holds_alternative<std::unique_ptr<UnaryExpression>>(leftValue.value)) {
+
+            if (opType == TokenType::Add || opType == TokenType::Subtract ||
+                opType == TokenType::Multiply || opType == TokenType::Divide) {
+                cerr << "Arithmetic on bool types is not supported" << endl;
+                exit(1);
+            }
+
+            const UnaryExpression &unary = *std::get<std::unique_ptr<UnaryExpression>>(rightValue.value);
+            TokenType unOperandType = getExpressionType(*unary.operand);
+            if (unOperandType != TokenType::BoolType) {
+                cerr << "Negation of a non-bool value" << endl;
+                exit(1);
+            }
+        }
+
         return leftType; //since they're the same type
     }
+
     cerr << "Unknown expression type" <<endl;
     exit(1);
 }

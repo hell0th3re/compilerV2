@@ -12,6 +12,11 @@ struct VariableDeclaration {
 
 struct Expression;
 
+struct UnaryExpression {
+    TokenType op;
+    std::unique_ptr<Expression> operand;
+};
+
 struct BinaryExpression {
     std::unique_ptr<Expression> left;
     std::unique_ptr<Expression> right;
@@ -19,7 +24,9 @@ struct BinaryExpression {
 };
 
 struct Expression {
-    std::variant<int, char, bool, std::string, std::unique_ptr<BinaryExpression>> value;
+    std::variant<int, char, bool, std::string,
+    std::unique_ptr<BinaryExpression>,
+    std::unique_ptr<UnaryExpression>> value;
 };
 
 struct Assignment {
@@ -51,6 +58,7 @@ class Parser {
     Statement parseStatement();
     Statement parseDeclaration();
     Statement parseAssignment();
+    Expression parseUnary();
     Expression parseEquality();
     Expression parseComparison();
     Expression parseExpression();

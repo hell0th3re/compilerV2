@@ -105,25 +105,52 @@ Statement Parser::parseAssignment() {
     consume(TokenType::Assign);
 
     assignment.value = parseEquality();
-    cout << " ";
     consume(TokenType::Semicolon);
 
     statement.value = std::move(assignment);
     return statement;
 }
 
+Expression Parser::parseUnary() {
+    if (peek().type == TokenType::Not) {
+        consume(TokenType::Not);
+        auto unary = std::make_unique<UnaryExpression>();
+        unary->operand = std::make_unique<Expression>(parseUnary());
+        unary->op = TokenType::Not;
+
+        Expression result;
+        result.value = std::move(unary);
+        return result;
+    }
+    return parseFactor();
+
+    // Expression expr;
+    // if (check(TokenType::Not)) {
+    //     Expression result;
+    //     consume(TokenType::Not);
+    //     auto unary = std::make_unique<UnaryExpression>();
+    //     unary->operand = std::make_unique<Expression>(peek().value);
+    //     unary->op = TokenType::Not;
+    //     result.value = std::move(unary);
+    //     expr = std::move(result);
+    // }
+    // return expr;
+}
+
 Expression Parser::parseEquality() {
     Expression left = parseComparison();
 
 
-    while (check(TokenType::Equals)) {;
+    while (check(TokenType::Equals) || check(TokenType::NotEquals)) {
 
-        consume(TokenType::Equals);
+        TokenType opType = peek().type;
+        consume(opType);
+
         Expression right = parseComparison();
 
         auto binary = std::make_unique<BinaryExpression>();
 
-        binary->op = TokenType::Equals;
+        binary->op = opType;
         binary->left = std::make_unique<Expression>(std::move(left));
         binary->right = std::make_unique<Expression>(std::move(right));
 
@@ -190,13 +217,13 @@ Expression Parser::parseExpression() {
 
 Expression Parser::parseTerm() {
 
-    Expression left = parseFactor();
+    Expression left = parseUnary();
 
     while (check(TokenType::Multiply) || check(TokenType::Divide)) {
         TokenType opType = peek().type;
         consume(opType);
 
-        Expression right = parseFactor();
+        Expression right = parseUnary();
         auto binary = std::make_unique<BinaryExpression>();
 
         binary->op = opType;
@@ -219,6 +246,10 @@ Expression Parser::parseFactor() {
         result = parseEquality();
         consume(TokenType::CloseParen);
     }
+    // else if (check(TokenType::Not)) {
+    //     result.value = parseUnary().value;
+    //     advance();
+    // }
     else if (check(TokenType::Integer)) {
 
         result.value = stoi(peek().value);
