@@ -60,6 +60,7 @@ TokenType Lexer::processWord(const string &word) {
 }
 
 void Lexer::tokenize() {
+    tokens.clear();
     Token token;
     char ch;
     string buffer;
@@ -174,8 +175,13 @@ void Lexer::tokenize() {
             }
 
             // Process the seperator token
+
             string singleCharStr(1, ch);
             token.type = getTokenType(singleCharStr);
+            if (token.type == TokenType::Undefined) {
+                cerr << "Unknown token type: " << singleCharStr << endl;
+                exit(1);
+            }
             token.value = singleCharStr;
             tokens.push_back(token);
         }

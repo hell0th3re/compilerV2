@@ -1,2 +1,2 @@
-let a:char;
-a = '2';
+let x:int;
+x = 5/2;

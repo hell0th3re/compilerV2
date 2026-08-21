@@ -3,7 +3,7 @@
 #include <map>
 #include "Parser.h"
 
-enum opGeneral {
+enum class opGeneral {
     Arithmetic,
     Comparison,
     Equality,
@@ -17,6 +17,7 @@ class SemanticAnalyzer {
 
     TokenType getExpressionType(const Expression &expression);
     static opGeneral getGeneralType(TokenType opType);
+    static void checkArithmetic(TokenType opType, const BinaryExpression &binary);
 public:
     explicit SemanticAnalyzer(Program program);
     Program analyze();

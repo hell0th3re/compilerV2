@@ -2,7 +2,7 @@
 #include <fstream>
 #include "Lexer.h"
 #include "Parser.h"
-#include "semanticAnalyzer.h"
+#include "SemanticAnalyzer.h"
 
 using namespace std;
 
@@ -17,8 +17,7 @@ int main() {
     Program prog = parser.parse();
     cout << " ";
     SemanticAnalyzer semanticAnalyzer(std::move(prog));
-
-    Program prog2 = semanticAnalyzer.analyze();
+    semanticAnalyzer.analyze();
     cout << endl;
 
     file.close();
