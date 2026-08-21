@@ -1,2 +1,5 @@
 let x:int;
-x = 5/2;
+let y:int;
+let z:int;
+
+x = y + 2 * (z - 3);

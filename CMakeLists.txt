@@ -10,4 +10,6 @@ add_executable(compilerV2 main.cpp
         Parser.cpp
         Parser.h
         semanticAnalyzer.cpp
-        semanticAnalyzer.h)
+        semanticAnalyzer.h
+        IR.cpp
+        IR.h)
