@@ -26,6 +26,8 @@ enum class TokenType {
     Equals,
     NotEquals,
     Not,
+    And,
+    Or,
 
     OpenParen,
     CloseParen,
@@ -64,10 +66,14 @@ inline std::string tokenTypeToString(TokenType type) { //maybe should be inline,
             return "NotEquals";
         case TokenType::Not:
             return "Not";
+        case TokenType::And:
+            return "And";
         case TokenType::Let:
             return "Let";
         case TokenType::Add:
             return "Add";
+        case TokenType::Or:
+            return "Or";
         case TokenType::Subtract:
             return "Subtract";
         case TokenType::Multiply:

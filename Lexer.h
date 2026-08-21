@@ -25,6 +25,8 @@ class Lexer {
         {"==", TokenType::Equals},
         {"!=", TokenType::NotEquals},
         {"!", TokenType::Not},
+        {"&&", TokenType::And},
+        {"||", TokenType::Or},
         {"int", TokenType::IntType},
         {"char", TokenType::CharType},
         {"bool", TokenType::BoolType},

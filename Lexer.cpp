@@ -122,7 +122,9 @@ void Lexer::tokenize() {
             ch == ')' ||
             ch == '>' ||
             ch == '<' ||
-            ch == '!'
+            ch == '!' ||
+            ch == '&' ||
+            ch == '|'
             );
 
         if (isSeparator) {
@@ -148,6 +150,22 @@ void Lexer::tokenize() {
             }
             if (ch == '!' && file.peek() == '=') {
                 string op = "!=";
+                token.value = op;
+                token.type = getTokenType(op);
+                tokens.push_back(token);
+                file.get();
+                continue;
+            }
+            if (ch == '&' && file.peek() == '&') {
+                string op = "&&";
+                token.value = op;
+                token.type = getTokenType(op);
+                tokens.push_back(token);
+                file.get();
+                continue;
+            }
+            if (ch == '|' && file.peek() == '|') {
+                string op = "||";
                 token.value = op;
                 token.type = getTokenType(op);
                 tokens.push_back(token);

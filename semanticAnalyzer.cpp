@@ -89,6 +89,36 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
         const Expression &rightValue = *binary.right;
         TokenType opType = binary.op;
 
+        //moved from bottom
+        if (leftType == TokenType::BoolType && (opType == TokenType::Add || opType == TokenType::Subtract ||
+                opType == TokenType::Multiply || opType == TokenType::Divide)) {
+            cerr << "Arithmetic on bool types is not supported" << endl;
+            exit(1);
+        }
+
+        // if (holds_alternative<std::unique_ptr<UnaryExpression>>(rightValue.value) &&
+        //     holds_alternative<std::unique_ptr<UnaryExpression>>(leftValue.value)) {
+        //
+        //     if (opType == TokenType::Add || opType == TokenType::Subtract ||
+        //         opType == TokenType::Multiply || opType == TokenType::Divide) {
+        //         cerr << "Arithmetic on bool types is not supported" << endl;
+        //         exit(1);
+        //         }
+        //
+        //     const UnaryExpression &unary = *std::get<std::unique_ptr<UnaryExpression>>(rightValue.value);
+        //     TokenType unOperandType = getExpressionType(*unary.operand);
+        //     if (unOperandType != TokenType::BoolType) {
+        //         cerr << "Negation of a non-bool value" << endl;
+        //         exit(1);
+        //     }
+        // }
+
+        if (opType == TokenType::And || opType == TokenType::Or) {
+            if (leftType == TokenType::BoolType) {
+                return TokenType::BoolType;
+            }
+        }
+
         if (opType == TokenType::Equals || opType == TokenType::NotEquals) {
             return TokenType::BoolType;
         }
@@ -115,25 +145,12 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
         }
 
         if (leftType == TokenType::CharType && rightType == TokenType::CharType) {
+            if (opType == TokenType::And || opType == TokenType::Or) {
+                cerr << "Logical operations on charType are not supported" << endl;
+                exit(1);
+            }
             cerr << "Arithmetic on charType is not supported" << endl;
             exit(1);
-        }
-
-        if (holds_alternative<std::unique_ptr<UnaryExpression>>(rightValue.value) &&
-            holds_alternative<std::unique_ptr<UnaryExpression>>(leftValue.value)) {
-
-            if (opType == TokenType::Add || opType == TokenType::Subtract ||
-                opType == TokenType::Multiply || opType == TokenType::Divide) {
-                cerr << "Arithmetic on bool types is not supported" << endl;
-                exit(1);
-            }
-
-            const UnaryExpression &unary = *std::get<std::unique_ptr<UnaryExpression>>(rightValue.value);
-            TokenType unOperandType = getExpressionType(*unary.operand);
-            if (unOperandType != TokenType::BoolType) {
-                cerr << "Negation of a non-bool value" << endl;
-                exit(1);
-            }
         }
 
         return leftType; //since they're the same type

@@ -104,7 +104,7 @@ Statement Parser::parseAssignment() {
     consume(TokenType::Identifier);
     consume(TokenType::Assign);
 
-    assignment.value = parseEquality();
+    assignment.value = parseLogicOr();
     consume(TokenType::Semicolon);
 
     statement.value = std::move(assignment);
@@ -123,18 +123,58 @@ Expression Parser::parseUnary() {
         return result;
     }
     return parseFactor();
+}
 
-    // Expression expr;
-    // if (check(TokenType::Not)) {
-    //     Expression result;
-    //     consume(TokenType::Not);
-    //     auto unary = std::make_unique<UnaryExpression>();
-    //     unary->operand = std::make_unique<Expression>(peek().value);
-    //     unary->op = TokenType::Not;
-    //     result.value = std::move(unary);
-    //     expr = std::move(result);
-    // }
-    // return expr;
+Expression Parser::parseLogicOr() {
+    Expression left = parseLogicAnd();
+
+
+    while (check(TokenType::Or)) {
+
+        TokenType opType = peek().type;
+        consume(opType);
+
+        Expression right = parseLogicAnd();
+
+        auto binary = std::make_unique<BinaryExpression>();
+
+        binary->op = opType;
+        binary->left = std::make_unique<Expression>(std::move(left));
+        binary->right = std::make_unique<Expression>(std::move(right));
+
+        Expression result;
+        result.value = std::move(binary);
+
+        left = std::move(result);
+    }
+
+    return left;
+}
+
+Expression Parser::parseLogicAnd() {
+    Expression left = parseEquality();
+
+
+    while (check(TokenType::And)) {
+
+        TokenType opType = peek().type;
+        consume(opType);
+
+        Expression right = parseEquality();
+
+        auto binary = std::make_unique<BinaryExpression>();
+
+        binary->op = opType;
+        binary->left = std::make_unique<Expression>(std::move(left));
+        binary->right = std::make_unique<Expression>(std::move(right));
+
+        Expression result;
+        result.value = std::move(binary);
+
+        left = std::move(result);
+    }
+
+    return left;
 }
 
 Expression Parser::parseEquality() {
@@ -243,13 +283,9 @@ Expression Parser::parseFactor() {
     Expression result;
     if (check(TokenType::OpenParen)) {
         consume(TokenType::OpenParen);
-        result = parseEquality();
+        result = parseLogicOr(); //highest precedence
         consume(TokenType::CloseParen);
     }
-    // else if (check(TokenType::Not)) {
-    //     result.value = parseUnary().value;
-    //     advance();
-    // }
     else if (check(TokenType::Integer)) {
 
         result.value = stoi(peek().value);

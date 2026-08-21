@@ -59,6 +59,8 @@ class Parser {
     Statement parseDeclaration();
     Statement parseAssignment();
     Expression parseUnary();
+    Expression parseLogicOr();
+    Expression parseLogicAnd();
     Expression parseEquality();
     Expression parseComparison();
     Expression parseExpression();
