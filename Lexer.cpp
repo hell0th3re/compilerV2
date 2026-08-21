@@ -82,7 +82,7 @@ void Lexer::tokenize() {
             }
             if (charIter > 1) {
                 cerr << "char too long" << endl;
-                return;
+                exit(1);
             }
             charIter++;
             continue;

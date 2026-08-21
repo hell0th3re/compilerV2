@@ -75,6 +75,7 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
     }
 
     if (holds_alternative<std::unique_ptr<BinaryExpression>>(expression.value)) {
+
         const BinaryExpression &binary = *std::get<std::unique_ptr<BinaryExpression>>(expression.value);
 
         TokenType leftType = getExpressionType(*binary.left);
@@ -85,79 +86,146 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
             exit(1);
         }
 
-        const Expression &leftValue = *binary.left;
+        //const Expression &leftValue = *binary.left;
         const Expression &rightValue = *binary.right;
         TokenType opType = binary.op;
 
-        //moved from bottom
-        if (leftType == TokenType::BoolType && (opType == TokenType::Add || opType == TokenType::Subtract ||
-                opType == TokenType::Multiply || opType == TokenType::Divide)) {
+        //Fuckery start
+
+        opGeneral opGeneralType =  getGeneralType(opType);
+
+        if (leftType == TokenType::BoolType && opGeneralType == Arithmetic) {
             cerr << "Arithmetic on bool types is not supported" << endl;
             exit(1);
         }
 
-        // if (holds_alternative<std::unique_ptr<UnaryExpression>>(rightValue.value) &&
-        //     holds_alternative<std::unique_ptr<UnaryExpression>>(leftValue.value)) {
-        //
-        //     if (opType == TokenType::Add || opType == TokenType::Subtract ||
-        //         opType == TokenType::Multiply || opType == TokenType::Divide) {
-        //         cerr << "Arithmetic on bool types is not supported" << endl;
-        //         exit(1);
-        //         }
-        //
-        //     const UnaryExpression &unary = *std::get<std::unique_ptr<UnaryExpression>>(rightValue.value);
-        //     TokenType unOperandType = getExpressionType(*unary.operand);
-        //     if (unOperandType != TokenType::BoolType) {
-        //         cerr << "Negation of a non-bool value" << endl;
-        //         exit(1);
-        //     }
-        // }
-
-        if (opType == TokenType::And || opType == TokenType::Or) {
-            if (leftType == TokenType::BoolType) {
-                return TokenType::BoolType;
-            }
-        }
-
-        if (opType == TokenType::Equals || opType == TokenType::NotEquals) {
-            return TokenType::BoolType;
-        }
-
-        if (opType == TokenType::GreaterThan || opType == TokenType::LessThan) {
-            //right and left expressions will be of the same type at this point
-            if (getExpressionType(rightValue) == TokenType::BoolType) {
-                cerr << "Bool comparison is not supported" << endl;
-                exit(1);
-            }
-            return TokenType::BoolType;
-        }
-
-        if (opType == TokenType::Divide){
-            cout << "WARNING: Division results of float type are not supported" << endl;
-
-            //if the right side is an integer literal, just check
-            if (holds_alternative<int>(rightValue.value) &&
-                std::get<int>(rightValue.value) == 0) {
-                cerr << "Division by 0" << endl;
-                exit(1);
-            }
-
-        }
-
-        if (leftType == TokenType::CharType && rightType == TokenType::CharType) {
-            if (opType == TokenType::And || opType == TokenType::Or) {
-                cerr << "Logical operations on charType are not supported" << endl;
-                exit(1);
-            }
-            cerr << "Arithmetic on charType is not supported" << endl;
+        if (leftType == TokenType::BoolType && opGeneralType == Comparison) {
+            cerr << "'<' and '>' operators are not supported on bool types" << endl;
             exit(1);
         }
 
-        return leftType; //since they're the same type
+        if (leftType == TokenType::CharType && opGeneralType == Arithmetic) {
+            cerr << "Arithmetic on char types is not supported" << endl;
+            exit(1);
+        }
+
+        if (leftType == TokenType::CharType && opGeneralType == Comparison) {
+            cerr << "'<' and '>' operators are not supported on char types" << endl;
+            exit(1);
+        }
+
+        if (leftType == TokenType::CharType && opGeneralType == Logic) {
+            cerr << "Logical operations on char types is not supported" << endl;
+            exit(1);
+        }
+
+        if (leftType == TokenType::IntType && opGeneralType == Logic) {
+            cerr << "Logical operations on int types are not supported" << endl;
+            exit(1);
+        }
+
+        if (leftType == TokenType::IntType && opType == TokenType::Divide) {
+            //if (holds_alternative<int>(rightValue.value) &&
+            if (std::get<int>(rightValue.value) == 0) {
+                cerr << "Division by 0" << endl;
+                exit(1);
+            }
+        }
+
+        if (leftType == TokenType::IntType && opGeneralType != Arithmetic) {
+            return TokenType::BoolType;
+        }
+        if (leftType == TokenType::CharType) {
+            //only allowed operation on chars returns bool type
+            return TokenType::BoolType;
+        }
+
+        return leftType;
+
+        //Fuckery end
+
+        // //moved from bottom
+        // if (leftType == TokenType::BoolType && (opType == TokenType::Add || opType == TokenType::Subtract ||
+        //         opType == TokenType::Multiply || opType == TokenType::Divide)) {
+        //     cerr << "Arithmetic on bool types is not supported" << endl;
+        //     exit(1);
+        // }
+        //
+        // if (opType == TokenType::And || opType == TokenType::Or) {
+        //     if (leftType == TokenType::BoolType) {
+        //         return TokenType::BoolType;
+        //     }
+        // }
+        //
+        // if (opType == TokenType::Equals || opType == TokenType::NotEquals) {
+        //     return TokenType::BoolType;
+        // }
+        //
+        // if (opType == TokenType::GreaterThan || opType == TokenType::LessThan) {
+        //     //right and left expressions will be of the same type at this point
+        //     if (getExpressionType(rightValue) == TokenType::BoolType) {
+        //         cerr << "Bool comparison is not supported" << endl;
+        //         exit(1);
+        //     }
+        //     return TokenType::BoolType;
+        // }
+        //
+        // if (opType == TokenType::Divide){
+        //     cout << "WARNING: Division results of float type are not supported" << endl;
+        //
+        //     //if the right side is an integer literal, just check
+        //     if (holds_alternative<int>(rightValue.value) &&
+        //         std::get<int>(rightValue.value) == 0) {
+        //         cerr << "Division by 0" << endl;
+        //         exit(1);
+        //     }
+        //
+        // }
+        //
+        // if (leftType == TokenType::CharType && rightType == TokenType::CharType) {
+        //     if (opType == TokenType::And || opType == TokenType::Or) {
+        //         cerr << "Logical operations on charType are not supported" << endl;
+        //         exit(1);
+        //     }
+        //     cerr << "Arithmetic on charType is not supported" << endl;
+        //     exit(1);
+        // }
+        //
+        // return leftType; //since they're the same type
     }
 
     cerr << "Unknown expression type" <<endl;
     exit(1);
+}
+
+opGeneral SemanticAnalyzer::getGeneralType(TokenType opType) {
+    switch (opType) {
+        case TokenType::And:
+            return Logic;
+        case TokenType::Or:
+            return Logic;
+        case TokenType::Not:
+            return Logic;
+        case TokenType::Equals:
+            return Equality;
+        case TokenType::NotEquals:
+            return Equality;
+        case TokenType::GreaterThan:
+            return Comparison;
+        case TokenType::LessThan:
+            return Comparison;
+        case TokenType::Add:
+            return Arithmetic;
+        case TokenType::Subtract:
+            return Arithmetic;
+        case TokenType::Multiply:
+            return Arithmetic;
+        case TokenType::Divide:
+            return Arithmetic;
+        default:
+            cerr << "Unknown general expression type" << endl;
+            exit(1);
+    }
 }
 
 //public
@@ -167,5 +235,5 @@ SemanticAnalyzer::SemanticAnalyzer(Program program) {
 
 Program SemanticAnalyzer::analyze() {
     process();
-    return std::move(this->programAnalysed);
+    return std::move(program);
 }

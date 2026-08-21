@@ -1,2 +1,2 @@
-let a:bool;
-a = '5' + 'a';
+let a:char;
+a = '2';
