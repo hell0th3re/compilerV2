@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 
+#include "CodeGenerator.h"
 #include "IR.h"
 #include "Lexer.h"
 #include "Parser.h"
@@ -14,16 +15,21 @@ int main() {
 
     Lexer lexer(file);
     vector <Token> tokens = lexer.lex();
-    //cout << " ";
+
     Parser parser(tokens);
     Program prog = parser.parse();
-    //cout << " ";
+
     SemanticAnalyzer semanticAnalyzer(std::move(prog));
     Program progChecked = semanticAnalyzer.analyze();
-    //cout << " ";
+
     IRGenerator generator(std::move(progChecked));
     IRProgram irProg = generator.generateIR();
-    cout << " ";
+    std::cout << std::endl;
+    CodeGenerator codeGen(std::move(irProg));
+    string code = codeGen.generate();
+
+    cout << code << endl;
+
     file.close();
     return 0;
 }

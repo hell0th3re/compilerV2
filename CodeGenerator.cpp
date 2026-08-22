@@ -1,0 +1,172 @@
+#include "CodeGenerator.h"
+
+#include <iostream>
+#include <sstream>
+#include <utility>
+
+void CodeGenerator::process() {
+    std::stringstream codeTemp;
+    for (const IRInstruction& instruction : ir.instructions) {
+
+        //allocate new vars, and allow redeclarations to reuse things
+        if (!locations.contains(instruction.destination)) {
+            offset += 8;
+            locations.insert({instruction.destination, offset});
+        }
+
+        if (instruction.op == IROp::Move) {
+            generateMove(instruction, "rax");
+            continue;
+        }
+        if (instruction.op == IROp::Not) {
+
+        }
+        else {
+            generateBinary(instruction, "rax");
+        }
+    }
+}
+
+void CodeGenerator::generateMove(const IRInstruction &instruction, const std::string &reg) {
+    std::stringstream codeTemp;
+    codeTemp << loadValue(instruction.left, reg);
+    codeTemp << "mov [rbp - " << locations.at(instruction.destination) << "], " << reg << std::endl;
+    code += codeTemp.str();
+}
+
+void CodeGenerator::generateBinary(const IRInstruction &instruction, const std::string &reg) {
+    std::stringstream codeTemp;
+
+    codeTemp << loadValue(instruction.left, reg);
+
+    if (instruction.right.has_value()) {
+        const IRValue &right = *instruction.right;
+
+        if (std::holds_alternative<std::string>(right.value)) {
+            std::string valueConv = std::get<std::string>(right.value);
+            codeTemp << irOpToAsm(instruction.op) << " " << reg << ", [rbp - " << locations.at(valueConv) << "]" << std::endl;
+        }
+        else if (std::holds_alternative<int>(right.value)) {
+            int valueConv = std::get<int>(right.value);
+            codeTemp << irOpToAsm(instruction.op) << " " << reg << ", " << valueConv << std::endl;
+
+        }
+        else if (std::holds_alternative<char>(right.value)) {
+            int valueConv = static_cast<unsigned char>(std::get<char>(right.value));
+            codeTemp << irOpToAsm(instruction.op) << " " << reg << ", " << valueConv << std::endl;
+        }
+        else if (std::holds_alternative<bool>(right.value)) {
+            int valueConv = std::get<bool>(right.value);
+            codeTemp << irOpToAsm(instruction.op) << " " << reg << ", " << valueConv << std::endl;
+        }
+        else {
+            std::cerr << "Failed to load value" << std::endl;
+            exit(1);
+        }
+
+        if (isComparison(instruction.op)) {
+            codeTemp << getSetType(instruction.op) << " al" << std::endl;
+            codeTemp << "movzx " << reg << ", al" << std::endl;
+            codeTemp << "mov [rbp - " << locations.at(instruction.destination) << "], " << "rax" << std::endl;
+            code += codeTemp.str();
+            return;
+        }
+    }
+
+    codeTemp << "mov [rbp - " << locations.at(instruction.destination) << "], " << reg << std::endl;
+
+    code += codeTemp.str();
+}
+
+std::string CodeGenerator::loadValue(const IRValue &value, const std::string &reg) const {
+    int valueConv = -1;
+    std::string identifier;
+    if (std::holds_alternative<int>(value.value)) {
+        valueConv = std::get<int>(value.value);
+    }
+    else if (std::holds_alternative<char>(value.value)) {
+        valueConv = static_cast<unsigned char>(std::get<char>(value.value));
+    }
+    else if (std::holds_alternative<bool>(value.value)) {
+        valueConv = std::get<bool>(value.value);
+    }
+    else if (std::holds_alternative<std::string>(value.value)) {
+        identifier = std::get<std::string>(value.value);
+    }
+    else {
+        std::cerr << "Failed to load value" << std::endl;
+        exit(1);
+    }
+    if (!identifier.empty()) {
+        return "mov " + reg + ", [rbp - " + std::to_string(locations.at(identifier)) + "]\n";
+    }
+
+    return "mov " + reg + ", " + std::to_string(valueConv) + "\n";
+}
+
+std::string CodeGenerator::getSetType(IROp op) {
+    switch (op) {
+        case IROp::CompareEqual:
+            return "sete";
+        case IROp::CompareGreater:
+            return "setg";
+        case IROp::CompareLess:
+            return "setl";
+        case IROp::CompareNotEqual:
+            return "setne";
+        default:
+            std::cerr << "operation not implemented yet" << std::endl;
+            exit(1);
+    }
+}
+
+std::string CodeGenerator::irOpToAsm(IROp op) {
+    switch (op) {
+        case IROp::Add:
+            return "add";
+        case IROp::Subtract:
+            return "sub";
+        case IROp::Multiply:
+            return "imul";
+        case IROp::Divide:
+            return "idiv";
+        case IROp::CompareEqual:
+            return "cmp";
+        case IROp::CompareGreater:
+            return "cmp";
+        case IROp::CompareLess:
+            return "cmp";
+        case IROp::CompareNotEqual:
+            return "cmp";
+        default:
+            std::cerr << "operation not implemented yet" << std::endl;
+            exit(1);
+    }
+}
+
+bool CodeGenerator::isComparison(IROp op) {
+    switch (op) {
+        case IROp::CompareEqual:
+            return true;
+        case IROp::CompareGreater:
+            return true;
+        case IROp::CompareLess:
+            return true;
+        case IROp::CompareNotEqual:
+            return true;
+        default:
+            return false;
+    }
+}
+
+//public
+CodeGenerator::CodeGenerator(IRProgram ir) {
+    offset = 0;
+    this->ir = std::move(ir);
+}
+
+std::string CodeGenerator::generate() {
+    code.clear();
+    process();
+    return code;
+}

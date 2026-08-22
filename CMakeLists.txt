@@ -12,4 +12,6 @@ add_executable(compilerV2 main.cpp
         semanticAnalyzer.cpp
         semanticAnalyzer.h
         IR.cpp
-        IR.h)
+        IR.h
+        CodeGenerator.cpp
+        CodeGenerator.h)
