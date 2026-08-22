@@ -190,6 +190,6 @@ IRGenerator::IRGenerator(Program parsedProg) {
 
 IRProgram IRGenerator::generateIR() {
     process();
-    printIRCode();
+    //printIRCode();
     return irProg;
 }

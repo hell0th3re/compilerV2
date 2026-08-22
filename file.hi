@@ -1,5 +1,2 @@
-let x:char;
-let y:int;
-let z:bool;
-
-y = 2+2/2;
+let x:int;
+x = 2+2*2;

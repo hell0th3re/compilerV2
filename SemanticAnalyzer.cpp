@@ -26,8 +26,12 @@ void SemanticAnalyzer::process() {
                 exit(1);
             }
 
+            assignments.insert(assignment.name);
+
             const TokenType variableType = variables.at(assignment.name);
             const TokenType expressionType = getExpressionType(assignment.value);
+
+
             if (variableType != expressionType) {
                 cerr << "Type error. Expected " <<  tokenTypeToString(variableType)
                 << ", got " << tokenTypeToString(expressionType) << endl;
@@ -50,6 +54,11 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
     if (holds_alternative<string>(expression.value)) {
         //returns the type of the variable in the variables map
         const string &name = std::get<string>(expression.value);
+
+        if (!assignments.contains(name)) {
+            cerr << "Operation on variable " << name << " before assignment" << endl;
+            exit(1);
+        }
         if (!variables.contains(name)) {
             cerr << name << " was not declared" << endl;
             exit(1);
@@ -75,6 +84,7 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
 
         TokenType leftType = getExpressionType(*binary.left);
         TokenType rightType = getExpressionType(*binary.right);
+
 
         if (leftType != rightType) {
             cerr << "Expression error: incompatible types" << endl;

@@ -28,8 +28,14 @@ int main() {
     CodeGenerator codeGen(std::move(irProg));
     string code = codeGen.generate();
 
-    cout << code << endl;
-
     file.close();
+
+    ofstream fileCompiled;
+    fileCompiled.open("../compiled.asm");
+
+    fileCompiled << code;
+
+    fileCompiled.close();
+
     return 0;
 }

@@ -6,6 +6,12 @@
 
 void CodeGenerator::process() {
     std::stringstream codeTemp;
+    codeTemp << "push rbp" << std::endl;
+    codeTemp << "mov rbp, rsp" << std::endl;
+    codeTemp << "sub rsp, 256" << std::endl;
+    codeTemp << std::endl;
+    code += codeTemp.str();
+
     for (const IRInstruction& instruction : ir.instructions) {
 
         //allocate new vars, and allow redeclarations to reuse things
@@ -19,7 +25,7 @@ void CodeGenerator::process() {
             continue;
         }
         if (instruction.op == IROp::Not) {
-
+            generateUnary(instruction, "rax");
         }
         else {
             generateBinary(instruction, "rax");
@@ -34,6 +40,15 @@ void CodeGenerator::generateMove(const IRInstruction &instruction, const std::st
     code += codeTemp.str();
 }
 
+void CodeGenerator::generateUnary(const IRInstruction& instruction, const std::string &reg) {
+    std::stringstream codeTemp;
+
+    codeTemp << loadValue(instruction.left, reg);
+    codeTemp << "xor " << reg << ", 1" << std::endl;
+    codeTemp << "mov [rbp - " << locations.at(instruction.destination) << "], " << reg << std::endl;
+    code += codeTemp.str();
+}
+
 void CodeGenerator::generateBinary(const IRInstruction &instruction, const std::string &reg) {
     std::stringstream codeTemp;
 
@@ -42,14 +57,37 @@ void CodeGenerator::generateBinary(const IRInstruction &instruction, const std::
     if (instruction.right.has_value()) {
         const IRValue &right = *instruction.right;
 
+
+
         if (std::holds_alternative<std::string>(right.value)) {
             std::string valueConv = std::get<std::string>(right.value);
-            codeTemp << irOpToAsm(instruction.op) << " " << reg << ", [rbp - " << locations.at(valueConv) << "]" << std::endl;
+
+            if (instruction.op == IROp::Divide) {
+                codeTemp << "cqo" << std::endl;
+                codeTemp << "mov rcx, [rbp - " << locations.at(valueConv) << "]" << std::endl;
+                codeTemp << "idiv rcx" << std::endl;
+                codeTemp << "mov [rbp - " << locations.at(instruction.destination) << "], " << "rax" << std::endl;
+                code += codeTemp.str();
+                return;
+            }
+
+
+            codeTemp << irOpToAsm(instruction.op) << " " << reg << ", [rbp - " << locations.at(valueConv) << "]"
+            << std::endl;
         }
         else if (std::holds_alternative<int>(right.value)) {
             int valueConv = std::get<int>(right.value);
-            codeTemp << irOpToAsm(instruction.op) << " " << reg << ", " << valueConv << std::endl;
 
+            if (instruction.op == IROp::Divide) {
+                codeTemp << "cqo" << std::endl;
+                codeTemp << "mov rcx, " << valueConv << std::endl;
+                codeTemp << "idiv rcx" << std::endl;
+                codeTemp << "mov [rbp - " << locations.at(instruction.destination) << "], " << "rax" << std::endl;
+                code += codeTemp.str();
+                return;
+            }
+
+            codeTemp << irOpToAsm(instruction.op) << " " << reg << ", " << valueConv << std::endl;
         }
         else if (std::holds_alternative<char>(right.value)) {
             int valueConv = static_cast<unsigned char>(std::get<char>(right.value));
@@ -60,9 +98,11 @@ void CodeGenerator::generateBinary(const IRInstruction &instruction, const std::
             codeTemp << irOpToAsm(instruction.op) << " " << reg << ", " << valueConv << std::endl;
         }
         else {
-            std::cerr << "Failed to load value" << std::endl;
+            std::cerr << "Failed to load value, unknown variant" << std::endl;
             exit(1);
         }
+
+
 
         if (isComparison(instruction.op)) {
             codeTemp << getSetType(instruction.op) << " al" << std::endl;
@@ -94,7 +134,7 @@ std::string CodeGenerator::loadValue(const IRValue &value, const std::string &re
         identifier = std::get<std::string>(value.value);
     }
     else {
-        std::cerr << "Failed to load value" << std::endl;
+        std::cerr << "Failed to load value, unknown variant" << std::endl;
         exit(1);
     }
     if (!identifier.empty()) {
@@ -115,7 +155,7 @@ std::string CodeGenerator::getSetType(IROp op) {
         case IROp::CompareNotEqual:
             return "setne";
         default:
-            std::cerr << "operation not implemented yet" << std::endl;
+            std::cerr << "Unknown comparison operation" << std::endl;
             exit(1);
     }
 }
@@ -128,8 +168,6 @@ std::string CodeGenerator::irOpToAsm(IROp op) {
             return "sub";
         case IROp::Multiply:
             return "imul";
-        case IROp::Divide:
-            return "idiv";
         case IROp::CompareEqual:
             return "cmp";
         case IROp::CompareGreater:
@@ -138,6 +176,12 @@ std::string CodeGenerator::irOpToAsm(IROp op) {
             return "cmp";
         case IROp::CompareNotEqual:
             return "cmp";
+        case IROp::And:
+            return "and";
+        case IROp::Or:
+            return "or";
+        case IROp::Not:
+            return "not";
         default:
             std::cerr << "operation not implemented yet" << std::endl;
             exit(1);
@@ -159,6 +203,22 @@ bool CodeGenerator::isComparison(IROp op) {
     }
 }
 
+void CodeGenerator::indent() {
+    std::string start = "global _start\nsection .text\n\n_start:\n";
+    std::string end = "\n\tmov rsp, rbp\n\tpop rbp\n\tmov rax, 60\n\tmov rdi, 0\n\tsyscall";
+    std::string result = "\t";
+
+    for (char c : code) {
+        result += c;
+
+        if (c == '\n') {
+            result += '\t';
+        }
+    }
+
+    code = start + result + end;
+}
+
 //public
 CodeGenerator::CodeGenerator(IRProgram ir) {
     offset = 0;
@@ -168,5 +228,6 @@ CodeGenerator::CodeGenerator(IRProgram ir) {
 std::string CodeGenerator::generate() {
     code.clear();
     process();
+    indent();
     return code;
 }
