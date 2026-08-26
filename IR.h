@@ -20,7 +20,8 @@ enum class IROp {
     And,
     Or,
     Not,
-    Move
+    Move,
+    Exit
 };
 
 struct IRValue {

@@ -1,2 +1,5 @@
 let x:int;
-x = 2+2*2;
+let y:int;
+x = 4 + 3;
+exit 9;
+x = 3;

@@ -11,6 +11,7 @@ class CodeGenerator {
     std::string code;
     void process();
     void generateMove(const IRInstruction& instruction, const std::string &reg);
+    void generateExit(const IRInstruction &instruction); // here
     void generateUnary(const IRInstruction& instruction, const std::string &reg);
     void generateBinary(const IRInstruction &instruction, const std::string &reg);
     [[nodiscard]] std::string loadValue(const IRValue& value, const std::string &reg) const;

@@ -37,7 +37,6 @@ TokenType Lexer::getTokenType(const string &tokenVal) {
         TokenType tokenT = keywords.at(tokenVal);
         return tokenT;
     }
-    cerr << "Invalid token type: " << tokenVal << endl;
     return TokenType::Undefined;
 }
 
@@ -53,7 +52,6 @@ TokenType Lexer::processWord(const string &word) {
         token.type = TokenType::Identifier;
     }
     else {
-        cerr << "Invalid token: " << word << endl;
         return TokenType::Undefined;
     }
     return token.type;
@@ -78,11 +76,12 @@ void Lexer::tokenize() {
                 token.value = charBuff;
                 inChar = false;
                 tokens.push_back(token);
+
                 charBuff.clear();
                 buffer.clear();
             }
             if (charIter > 1) {
-                cerr << "char too long" << endl;
+                cerr << "Char too long" << endl;
                 exit(1);
             }
             charIter++;
@@ -101,6 +100,7 @@ void Lexer::tokenize() {
                 token.type = processWord(buffer);
                 if (token.type == TokenType::Undefined) {
                     cerr << "Unknown token type: " << buffer << endl;
+                    exit(1);
                     return;
                 }
 
@@ -133,11 +133,12 @@ void Lexer::tokenize() {
                 token.type = processWord(buffer);
                 if (token.type == TokenType::Undefined) {
                     cerr << "Unknown token type: " << buffer << endl;
-                    return;
+                    exit(1);
                 }
 
                 token.value = buffer;
                 tokens.push_back(token);
+
                 buffer.clear();
             }
             // End of word by keyword seperator (instead of space)
@@ -179,7 +180,7 @@ void Lexer::tokenize() {
             string singleCharStr(1, ch);
             token.type = getTokenType(singleCharStr);
             if (token.type == TokenType::Undefined) {
-                cerr << "Unknown token type: " << singleCharStr << endl;
+                cerr << "Unknown seperator: " << singleCharStr << endl;
                 exit(1);
             }
             token.value = singleCharStr;
@@ -191,7 +192,7 @@ void Lexer::tokenize() {
     }
 
     if (inChar) {
-        cerr << "unterminated character literal" << endl;
+        cerr << "Unterminated character literal " << endl;
         exit(1);
     }
 
@@ -200,7 +201,7 @@ void Lexer::tokenize() {
         token.type = processWord(buffer);
         if (token.type == TokenType::Undefined) {
             cerr << "Unknown token type: " << buffer << endl;
-            return;
+            exit(1);
         }
 
         token.value = buffer;
@@ -218,5 +219,6 @@ Lexer::Lexer(ifstream &file) {
 
 vector <Token> Lexer::lex() {
     tokenize();
+
     return tokens;
 }

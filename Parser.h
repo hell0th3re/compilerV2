@@ -34,10 +34,15 @@ struct Assignment {
     Expression value;
 };
 
+struct Exit{
+    Expression value;
+};
+
 struct Statement {
     std::variant<
         VariableDeclaration,
-        Assignment
+        Assignment,
+        Exit
     > value;
 };
 
@@ -56,6 +61,7 @@ class Parser {
     void consume(TokenType type);
     void parseProgram();
     Statement parseStatement();
+    Statement parseExit();
     Statement parseDeclaration();
     Statement parseAssignment();
     Expression parseUnary();

@@ -1,5 +1,8 @@
 #include "SemanticAnalyzer.h"
+
+#include <cmath>
 #include <iostream>
+#include <math.h>
 #include <utility>
 
 using namespace std;
@@ -35,6 +38,15 @@ void SemanticAnalyzer::process() {
             if (variableType != expressionType) {
                 cerr << "Type error. Expected " <<  tokenTypeToString(variableType)
                 << ", got " << tokenTypeToString(expressionType) << endl;
+                exit(1);
+            }
+        }
+
+        else if (holds_alternative<Exit>(statement.value)) {
+            const Exit &exitCall = std::get<Exit>(statement.value);
+            TokenType exp = getExpressionType(exitCall.value); //see if the expression is valid
+            if (exp != TokenType::IntType && exp != TokenType::Identifier) {
+                cerr << "Exit code must be an integer literal, or an int type variable" << endl;
                 exit(1);
             }
         }

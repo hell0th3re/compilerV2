@@ -9,33 +9,52 @@
 
 using namespace std;
 
+class Compiler {
+    vector <Token> tokens;
+    Program prog;
+    Program progChecked;
+    IRProgram irProg;
+    string code;
+
+    public:
+    void compile(const string &fileInName, const string &fileOutName) {
+        ifstream file;
+        file.open("../" + fileInName);
+
+        if (!file) {
+            cerr << "Error opening file " << fileInName << endl;
+            exit(1);
+        }
+
+        Lexer lexer(file);
+        tokens = lexer.lex();
+
+        Parser parser(tokens);
+        prog = parser.parse();
+
+        SemanticAnalyzer semanticAnalyzer(std::move(prog));
+        progChecked = semanticAnalyzer.analyze();
+
+        IRGenerator generator(std::move(progChecked));
+        irProg = generator.generateIR();
+        std::cout << std::endl;
+        CodeGenerator codeGen(std::move(irProg));
+        code = codeGen.generate();
+
+        file.close();
+
+        ofstream fileCompiled;
+        fileCompiled.open("../" + fileOutName);
+
+        fileCompiled << code;
+
+        fileCompiled.close();
+    }
+};
+
 int main() {
-    ifstream file;
-    file.open("../file.hi");
-
-    Lexer lexer(file);
-    vector <Token> tokens = lexer.lex();
-
-    Parser parser(tokens);
-    Program prog = parser.parse();
-
-    SemanticAnalyzer semanticAnalyzer(std::move(prog));
-    Program progChecked = semanticAnalyzer.analyze();
-
-    IRGenerator generator(std::move(progChecked));
-    IRProgram irProg = generator.generateIR();
-    std::cout << std::endl;
-    CodeGenerator codeGen(std::move(irProg));
-    string code = codeGen.generate();
-
-    file.close();
-
-    ofstream fileCompiled;
-    fileCompiled.open("../compiled.asm");
-
-    fileCompiled << code;
-
-    fileCompiled.close();
+    Compiler compiler;
+    compiler.compile("file.hi", "compiled.asm");
 
     return 0;
 }

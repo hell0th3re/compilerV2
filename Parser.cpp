@@ -51,10 +51,28 @@ Statement Parser::parseStatement() {
     else if (peek().type == TokenType::Identifier) {
         statement = parseAssignment();
     }
+    else if (peek().type == TokenType::Exit) {
+        statement = parseExit();
+    }
     else {
         cerr << "Unknown token" << endl;
         exit(1);
     }
+    return statement;
+}
+
+Statement Parser::parseExit() {
+    Statement statement;
+    Exit exit;
+    //exit.name = "exit";
+
+    consume(TokenType::Exit);
+    Expression temp = parseLogicOr();
+
+    exit.value = std::move(temp);
+    statement.value = std::move(exit);
+
+    consume(TokenType::Semicolon);
     return statement;
 }
 

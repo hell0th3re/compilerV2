@@ -13,6 +13,15 @@ void IRGenerator::process() {
             assignInstruction.destination = assignment.name;
             irProg.instructions.push_back(std::move(assignInstruction));
         }
+        if (std::holds_alternative<Exit>(statement.value)) {
+            const Exit &exitCall = std::get<Exit>(statement.value);
+            IRInstruction exitInstruction;
+            exitInstruction.op = OpToIROp(TokenType::Exit); // should return Exit
+            exitInstruction.left = generateExpression(exitCall.value);
+            exitInstruction.destination = "exit";
+            irProg.instructions.push_back(std::move(exitInstruction));
+            return;
+        }
     }
 }
 
@@ -102,6 +111,8 @@ IROp IRGenerator::OpToIROp(TokenType binOp) {
             return IROp::Or;
         case TokenType::Not:
             return IROp::Not;
+        case TokenType::Exit:
+            return IROp::Exit;
         default:
             std::cerr << "Operation not found" << std::endl;
             exit(1);
@@ -132,6 +143,8 @@ static std::string opToString(IROp op) {
             return ">";
         case IROp::Not:
             return "!";
+        case IROp::Exit:
+            return "exit";
         default:
             std::cerr << "unknown opType (debug error)" << std::endl;
             exit(1);
@@ -162,7 +175,13 @@ void IRGenerator::printIRCode() {
     for (const IRInstruction &instruction : irProg.instructions) {
 
         std::cout << instruction.destination;
-        std::cout << " = ";
+        if (instruction.op != IROp::Move && instruction.op != IROp::Exit) {
+            std::cout << " = ";
+        }
+        else {
+            std::cout << " <- ";
+        }
+
         if (instruction.op == IROp::Not) {
             std::cout << opToString(instruction.op);
             std::cout << irValueToString(instruction.left) << " ";
@@ -170,7 +189,7 @@ void IRGenerator::printIRCode() {
             continue;
         }
         std::cout << irValueToString(instruction.left) << " ";
-        if (instruction.op != IROp::Move) {
+        if (instruction.op != IROp::Move && instruction.op != IROp::Exit) {
             std::cout << opToString(instruction.op) << " ";
             if (!instruction.right.has_value()) {
                 std::cerr << "Instruction.right is empty (debug error)" << std::endl;
@@ -190,6 +209,6 @@ IRGenerator::IRGenerator(Program parsedProg) {
 
 IRProgram IRGenerator::generateIR() {
     process();
-    //printIRCode();
+    printIRCode();
     return irProg;
 }

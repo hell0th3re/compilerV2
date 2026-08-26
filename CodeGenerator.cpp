@@ -6,13 +6,25 @@
 
 void CodeGenerator::process() {
     std::stringstream codeTemp;
+
+    size_t stackSize = 0;
+
+    for (const IRInstruction& instruction : ir.instructions) {
+        stackSize++;
+    }
+
     codeTemp << "push rbp" << std::endl;
     codeTemp << "mov rbp, rsp" << std::endl;
-    codeTemp << "sub rsp, 256" << std::endl;
+    codeTemp << "sub rsp, " << stackSize*8 << std::endl;
     codeTemp << std::endl;
     code += codeTemp.str();
 
     for (const IRInstruction& instruction : ir.instructions) {
+
+        if (instruction.op == IROp::Exit) {
+            generateExit(instruction);
+            return;
+        }
 
         //allocate new vars, and allow redeclarations to reuse things
         if (!locations.contains(instruction.destination)) {
@@ -33,12 +45,20 @@ void CodeGenerator::process() {
     }
 }
 
+void CodeGenerator::generateExit(const IRInstruction &instruction) {
+    IRValue extValue = instruction.left;
+    std::string exitMove = loadValue(extValue, "rdi");
+    code += "\n" + exitMove;
+}
+
 void CodeGenerator::generateMove(const IRInstruction &instruction, const std::string &reg) {
     std::stringstream codeTemp;
     codeTemp << loadValue(instruction.left, reg);
     codeTemp << "mov [rbp - " << locations.at(instruction.destination) << "], " << reg << std::endl;
     code += codeTemp.str();
 }
+
+
 
 void CodeGenerator::generateUnary(const IRInstruction& instruction, const std::string &reg) {
     std::stringstream codeTemp;
@@ -205,7 +225,7 @@ bool CodeGenerator::isComparison(IROp op) {
 
 void CodeGenerator::indent() {
     std::string start = "global _start\nsection .text\n\n_start:\n";
-    std::string end = "\n\tmov rsp, rbp\n\tpop rbp\n\tmov rax, 60\n\tmov rdi, 0\n\tsyscall";
+    std::string end = "mov rsp, rbp\n\tpop rbp\n\tmov rax, 60\n\tsyscall";
     std::string result = "\t";
 
     for (char c : code) {

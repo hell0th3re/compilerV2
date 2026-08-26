@@ -6,6 +6,7 @@
 enum class TokenType {
     //Keywords
     Let,
+    Exit,
     IntType,
     CharType,
     BoolType,
@@ -42,7 +43,7 @@ enum class TokenType {
     Eof
 };
 
-inline std::string tokenTypeToString(TokenType type) { //maybe should be inline, not static? idk.
+inline std::string tokenTypeToString(TokenType type) {
     switch (type) {
         case TokenType::Identifier:
             return "Identifier";
@@ -70,6 +71,8 @@ inline std::string tokenTypeToString(TokenType type) { //maybe should be inline,
             return "And";
         case TokenType::Let:
             return "Let";
+        case TokenType::Exit:
+            return "Exit";
         case TokenType::Add:
             return "Add";
         case TokenType::Or:
