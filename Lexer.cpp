@@ -24,6 +24,9 @@ bool Lexer::isIdentifier(const string &word) {
 }
 
 bool Lexer::isInteger(const std::string &word) {
+    if (word.empty()) {
+        return false;
+    }
     for (int i = 0; i < word.length(); i++) {
         if (!isdigit(word[i])) {
             return false;
@@ -43,18 +46,25 @@ TokenType Lexer::getTokenType(const string &tokenVal) {
 TokenType Lexer::processWord(const string &word) {
     Token token;
     if (keywords.contains(word)) {
-        token.type = getTokenType(word);
+        return getTokenType(word);
     }
-    else if (isInteger(word)) {
-        token.type = TokenType::Integer;
+    if (isInteger(word)) {
+        return TokenType::Integer;
     }
-    else if (isIdentifier(word)){
-        token.type = TokenType::Identifier;
+    if (isIdentifier(word)){
+        return TokenType::Identifier;
+    }
+    return TokenType::Undefined;
+}
+
+void Lexer::consume(char ch) {
+    if (ch == '\n') {
+        line++;
+        column = 1;
     }
     else {
-        return TokenType::Undefined;
+        column++;
     }
-    return token.type;
 }
 
 void Lexer::tokenize() {
@@ -67,13 +77,16 @@ void Lexer::tokenize() {
     int charIter = 0;
 
     while (file.get(ch)) {
-
         if (inChar) {
             charBuff += ch;
 
             if (ch == '\'') {
+                if (charIter != 1) {
+                    cerr << "Invalid char literal" << endl;
+                }
                 token.type = TokenType::Character; //charLit
                 token.value = charBuff;
+                token.location = TokenStart;
                 inChar = false;
                 tokens.push_back(token);
 
@@ -84,10 +97,14 @@ void Lexer::tokenize() {
                 cerr << "Char too long" << endl;
                 exit(1);
             }
+            consume(ch);
             charIter++;
             continue;
         }
         if (ch == '\'') {
+            //consume(ch); //if we want an error on the char instead of on the '
+            TokenStart = {line, column};
+            consume(ch);
             charIter = 0;
             inChar = true;
             charBuff += ch;
@@ -105,9 +122,11 @@ void Lexer::tokenize() {
                 }
 
                 token.value = buffer;
+                token.location = TokenStart;
                 tokens.push_back(token);
                 buffer.clear();
             }
+            consume(ch); //if we want to count whitespace as a column
             continue;
         }
 
@@ -135,19 +154,23 @@ void Lexer::tokenize() {
                     cerr << "Unknown token type: " << buffer << endl;
                     exit(1);
                 }
-
                 token.value = buffer;
+                token.location = TokenStart;
                 tokens.push_back(token);
 
                 buffer.clear();
             }
-            // End of word by keyword seperator (instead of space)
+
+            token.location = {line, column};
+
             if (ch == '=' && file.peek() == '=') {
                 string op = "==";
                 token.value = op;
                 token.type = getTokenType(op);
                 tokens.push_back(token);
+                consume(ch);
                 file.get();
+                consume('=');
                 continue;
             }
             if (ch == '!' && file.peek() == '=') {
@@ -155,7 +178,9 @@ void Lexer::tokenize() {
                 token.value = op;
                 token.type = getTokenType(op);
                 tokens.push_back(token);
+                consume(ch);
                 file.get();
+                consume('=');
                 continue;
             }
             if (ch == '&' && file.peek() == '&') {
@@ -163,17 +188,23 @@ void Lexer::tokenize() {
                 token.value = op;
                 token.type = getTokenType(op);
                 tokens.push_back(token);
+                consume(ch);
                 file.get();
+                consume('&');
                 continue;
             }
             if (ch == '|' && file.peek() == '|') {
                 string op = "||";
                 token.value = op;
                 token.type = getTokenType(op);
+                //token.location = TokenStart;
                 tokens.push_back(token);
+                consume(ch);
                 file.get();
+                consume('|');
                 continue;
             }
+            TokenStart = {line, column};
 
             // Process the seperator token
 
@@ -187,8 +218,13 @@ void Lexer::tokenize() {
             tokens.push_back(token);
         }
         else {
+            if (buffer.empty()) {
+                TokenStart = {line,column};
+            }
             buffer += ch;
         }
+        consume(ch);
+
     }
 
     if (inChar) {
@@ -205,16 +241,22 @@ void Lexer::tokenize() {
         }
 
         token.value = buffer;
+        token.location = TokenStart;
         tokens.push_back(token);
     }
+
     Token eofTok;
     eofTok.type = TokenType::Eof;
+    eofTok.location = {line, column};
     tokens.push_back(eofTok);
 }
 
 //public
 Lexer::Lexer(ifstream &file) {
     this -> file = std::move(file);
+    line = 1;
+    column = 1;
+    TokenStart = {};
 }
 
 vector <Token> Lexer::lex() {

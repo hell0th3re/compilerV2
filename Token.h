@@ -96,9 +96,16 @@ inline std::string tokenTypeToString(TokenType type) {
     }
 }
 
+
+struct Location {
+    std::size_t line;
+    std::size_t column;
+};
+
 struct Token {
     TokenType type;
     std::string value;
+    Location location;
 };
 
 #endif //COMPILERV2_TOKEN_H

@@ -10,6 +10,9 @@
 class Lexer {
     std::ifstream file;
     std::vector <Token> tokens;
+    std::size_t line;
+    std::size_t column;
+    Location TokenStart{1,1};
 
     inline static std::map <std::string, TokenType> keywords = {
         {"let", TokenType::Let},
@@ -41,9 +44,10 @@ class Lexer {
     static TokenType getTokenType(const std::string &tokenVal);
     static TokenType processWord(const std::string &word);
     void tokenize();
+    void consume(char ch);
 
 public:
-    Lexer(std::ifstream &file);
+    explicit Lexer(std::ifstream &file);
     std::vector <Token> lex();
 };
 

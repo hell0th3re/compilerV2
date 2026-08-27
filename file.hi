@@ -1,5 +1,2 @@
-let x:int;
-let y:int;
-x = 4 + 3;
-exit 9;
-x = 3;
+let x: bool ;
+x = 'a' + 'b';
