@@ -66,6 +66,7 @@ class Parser {
     void consume(TokenType type);
     void parseProgram();
     Statement parseStatement();
+    void synchronise();
     Statement parseExit();
     Statement parseDeclaration();
     Statement parseAssignment();

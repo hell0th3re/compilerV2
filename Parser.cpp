@@ -9,9 +9,6 @@ void Parser::advance(){
     if (!isAtEnd()) {
         current++;
     }
-    else {
-        exit(1);
-    }
 }
 
 bool Parser::check(const TokenType type) const {
@@ -33,6 +30,7 @@ void Parser::consume(TokenType type){
             ", found: " + tokenTypeToString(peek().type),
             peek().location
         );
+
     }
 }
 
@@ -42,6 +40,26 @@ void Parser::parseProgram(){
         program.statements.push_back(std::move(statement));
     }
     std::cout << " ";
+}
+
+void Parser::synchronise() {
+    if (peek().type == TokenType::Let || peek().type == TokenType::Identifier || peek().type == TokenType::Exit) {
+        parseStatement();
+    }
+    else if (peek().type == TokenType::OpenParen || peek().type == TokenType::CloseParen) {
+        parseFactor();
+    }
+    else if (peek().type == TokenType::Undefined) {
+        advance();
+        synchronise();
+    }
+    else if (isAtEnd()) {
+        parseProgram();
+    }
+    else {
+        consume(peek().type);
+        synchronise();
+    }
 }
 
 Statement Parser::parseStatement() {
@@ -57,11 +75,10 @@ Statement Parser::parseStatement() {
     }
     else {
         diagnostics.error(
-            "Unknown token",
+            "Unexpected token: " + tokenTypeToString(peek().type),
             peek().location
         );
-        std::cerr << "Infinte recursion" << std::endl;
-        exit(1);
+        synchronise();
     }
     return statement;
 }
@@ -98,7 +115,8 @@ Statement Parser::parseDeclaration() {
     consume(TokenType::Semicolon);
     //consume doesnt advance if theres an error
     if (peek().type == TokenType::Semicolon) {
-        parseStatement();
+        synchronise();
+        //parseStatement();
     }
 
     statement.value = var;
@@ -134,11 +152,15 @@ Statement Parser::parseAssignment() {
     assignment.location = peek().location;
     consume(TokenType::Identifier);
     consume(TokenType::Assign);
+    if (peek().type == TokenType::Assign) {
+        synchronise();
+    }
 
     assignment.value = parseLogicOr();
     consume(TokenType::Semicolon);
     if (peek().type == TokenType::Semicolon) {
-        parseStatement();
+        // parseStatement();
+        synchronise();
     }
 
     statement.value = std::move(assignment);
@@ -325,8 +347,14 @@ Expression Parser::parseFactor() {
     result.location = peek().location;
     if (check(TokenType::OpenParen)) {
         consume(TokenType::OpenParen);
+        if (peek().type == TokenType::OpenParen) {
+            synchronise();
+        }
         result = parseLogicOr(); //highest precedence
         consume(TokenType::CloseParen);
+        if (peek().type == TokenType::CloseParen) {
+            synchronise();
+        }
     }
     else if (check(TokenType::Integer)) {
 
@@ -355,6 +383,8 @@ Expression Parser::parseFactor() {
             "Expected expression, found " + tokenTypeToString(peek().type),
             peek().location
         );
+        consume(peek().type);
+        synchronise();
     }
     return result;
 }
