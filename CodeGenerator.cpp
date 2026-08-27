@@ -7,11 +7,7 @@
 void CodeGenerator::process() {
     std::stringstream codeTemp;
 
-    size_t stackSize = 0;
-
-    for (const IRInstruction& instruction : ir.instructions) {
-        stackSize++;
-    }
+    const size_t stackSize =  ir.instructions.size();
 
     codeTemp << "push rbp" << std::endl;
     codeTemp << "mov rbp, rsp" << std::endl;

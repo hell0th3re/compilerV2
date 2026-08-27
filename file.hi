@@ -1,2 +1,4 @@
-let x: bool ;
-x = 'a' + 'b';
+let x: int;
+let x: char;
+x = 2 '
+m = 2;

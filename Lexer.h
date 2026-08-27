@@ -6,6 +6,7 @@
 #include "Token.h"
 #include <string>
 #include <vector>
+#include "Diagnostics.h"
 
 class Lexer {
     std::ifstream file;
@@ -13,6 +14,7 @@ class Lexer {
     std::size_t line;
     std::size_t column;
     Location TokenStart{1,1};
+    Diagnostics &diagnostics;
 
     inline static std::map <std::string, TokenType> keywords = {
         {"let", TokenType::Let},
@@ -47,7 +49,7 @@ class Lexer {
     void consume(char ch);
 
 public:
-    explicit Lexer(std::ifstream &file);
+    explicit Lexer(std::ifstream &file, Diagnostics &diagnostics);
     std::vector <Token> lex();
 };
 

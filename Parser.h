@@ -4,10 +4,12 @@
 #include <variant>
 #include <vector>
 #include "Token.h"
+#include "Diagnostics.h"
 
 struct VariableDeclaration {
     std::string name;
     TokenType type;
+    Location location;
 };
 
 struct Expression;
@@ -27,11 +29,13 @@ struct Expression {
     std::variant<int, char, bool, std::string,
     std::unique_ptr<BinaryExpression>,
     std::unique_ptr<UnaryExpression>> value;
+    Location location;
 };
 
 struct Assignment {
     std::string name;
     Expression value;
+    Location location;
 };
 
 struct Exit{
@@ -54,6 +58,7 @@ class Parser {
     Program program;
     std::vector <Token> tokens;
     size_t current = 0;
+    Diagnostics &diagnostics;
     [[nodiscard]] bool isAtEnd() const;
     [[nodiscard]] const Token &peek() const;
     void advance();
@@ -75,7 +80,7 @@ class Parser {
     TokenType parseType();
 
 public:
-    explicit Parser(const std::vector <Token> &toks);
+    explicit Parser(const std::vector <Token> &toks, Diagnostics &diagnostics);
     Program parse();
 };
 

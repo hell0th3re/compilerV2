@@ -2,7 +2,9 @@
 #include <iostream>
 #include <fstream>
 
-using namespace std;
+using std::string;
+using std::ifstream;
+using std::vector;
 
 bool Lexer::isIdentifier(const string &word) {
 
@@ -82,7 +84,11 @@ void Lexer::tokenize() {
 
             if (ch == '\'') {
                 if (charIter != 1) {
-                    cerr << "Invalid char literal" << endl;
+                    diagnostics.error(
+                        "Invalid char literal",
+                        TokenStart
+                    );
+                    //cerr << "Invalid char literal" << endl;
                 }
                 token.type = TokenType::Character; //charLit
                 token.value = charBuff;
@@ -94,15 +100,17 @@ void Lexer::tokenize() {
                 buffer.clear();
             }
             if (charIter > 1) {
-                cerr << "Char too long" << endl;
-                exit(1);
+                diagnostics.error(
+                    "Char too long",
+                    TokenStart
+                );
+                //cerr << "Char too long" << endl;
             }
             consume(ch);
             charIter++;
             continue;
         }
         if (ch == '\'') {
-            //consume(ch); //if we want an error on the char instead of on the '
             TokenStart = {line, column};
             consume(ch);
             charIter = 0;
@@ -116,9 +124,11 @@ void Lexer::tokenize() {
 
                 token.type = processWord(buffer);
                 if (token.type == TokenType::Undefined) {
-                    cerr << "Unknown token type: " << buffer << endl;
-                    exit(1);
-                    return;
+                    diagnostics.error(
+                        "Unknown token type: " + buffer,
+                        TokenStart
+                    );
+                    //cerr << "Unknown token type: " << buffer << endl;
                 }
 
                 token.value = buffer;
@@ -151,8 +161,12 @@ void Lexer::tokenize() {
             if (!buffer.empty()) {
                 token.type = processWord(buffer);
                 if (token.type == TokenType::Undefined) {
-                    cerr << "Unknown token type: " << buffer << endl;
-                    exit(1);
+
+                    diagnostics.error(
+                        "Unknown token type: " + buffer,
+                        TokenStart
+                    );
+                    //cerr << "Unknown token type: " << buffer << endl;
                 }
                 token.value = buffer;
                 token.location = TokenStart;
@@ -211,8 +225,11 @@ void Lexer::tokenize() {
             string singleCharStr(1, ch);
             token.type = getTokenType(singleCharStr);
             if (token.type == TokenType::Undefined) {
-                cerr << "Unknown seperator: " << singleCharStr << endl;
-                exit(1);
+                //cerr << "Unknown seperator: " << singleCharStr << endl;
+                diagnostics.error(
+                    "Unknown seperator: " + singleCharStr,
+                    TokenStart
+                );
             }
             token.value = singleCharStr;
             tokens.push_back(token);
@@ -228,16 +245,22 @@ void Lexer::tokenize() {
     }
 
     if (inChar) {
-        cerr << "Unterminated character literal " << endl;
-        exit(1);
+        diagnostics.error(
+            "Unterminated char literal",
+            TokenStart
+            );
+        //cerr << "Unterminated character literal " << endl;
     }
 
     // Process the last word
     if (!buffer.empty()) {
         token.type = processWord(buffer);
         if (token.type == TokenType::Undefined) {
-            cerr << "Unknown token type: " << buffer << endl;
-            exit(1);
+            diagnostics.error(
+                    "Unknown token type: " + buffer,
+                    TokenStart
+                );
+            //cerr << "Unknown token type: " << buffer << endl;
         }
 
         token.value = buffer;
@@ -252,15 +275,19 @@ void Lexer::tokenize() {
 }
 
 //public
-Lexer::Lexer(ifstream &file) {
-    this -> file = std::move(file);
-    line = 1;
-    column = 1;
-    TokenStart = {};
-}
+
+//pro tip: references must be intialised, so thats why this->diagnostics = diagnostics makes a copy,
+//a contructor initaliser list doesnt have that problem. So if there are no errors we can just check if
+//diagnostics.empty() in the compiler driver class
+
+Lexer::Lexer(ifstream &file, Diagnostics &diagnostics) :
+    file(std::move(file)),
+    diagnostics(diagnostics),
+    line(1),
+    column(1),
+    TokenStart({}) {}
 
 vector <Token> Lexer::lex() {
     tokenize();
-
     return tokens;
 }

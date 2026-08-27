@@ -100,6 +100,8 @@ inline std::string tokenTypeToString(TokenType type) {
 struct Location {
     std::size_t line;
     std::size_t column;
+
+    bool operator==(const Location&) const = default;
 };
 
 struct Token {

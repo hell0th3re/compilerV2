@@ -14,4 +14,6 @@ add_executable(compilerV2 main.cpp
         IR.cpp
         IR.h
         CodeGenerator.cpp
-        CodeGenerator.h)
+        CodeGenerator.h
+        Diagnostics.cpp
+        Diagnostics.h)

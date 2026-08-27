@@ -1,8 +1,6 @@
 #include "Parser.h"
 #include <iostream>
 
-using namespace std;
-
 const Token &Parser::peek() const{
     return tokens[current];
 }
@@ -30,9 +28,11 @@ void Parser::consume(TokenType type){
         advance();
     }
     else {
-        cerr << "Expected: " << tokenTypeToString(type)
-        << ", found: " << tokenTypeToString(peek().type) << endl;
-        exit(1);
+        diagnostics.error(
+            "Expected: " + tokenTypeToString(type) +
+            ", found: " + tokenTypeToString(peek().type),
+            peek().location
+        );
     }
 }
 
@@ -41,6 +41,7 @@ void Parser::parseProgram(){
         Statement statement = parseStatement();
         program.statements.push_back(std::move(statement));
     }
+    std::cout << " ";
 }
 
 Statement Parser::parseStatement() {
@@ -55,7 +56,11 @@ Statement Parser::parseStatement() {
         statement = parseExit();
     }
     else {
-        cerr << "Unknown token" << endl;
+        diagnostics.error(
+            "Unknown token",
+            peek().location
+        );
+        std::cerr << "Infinte recursion" << std::endl;
         exit(1);
     }
     return statement;
@@ -64,7 +69,6 @@ Statement Parser::parseStatement() {
 Statement Parser::parseExit() {
     Statement statement;
     Exit exit;
-    //exit.name = "exit";
 
     consume(TokenType::Exit);
     Expression temp = parseLogicOr();
@@ -84,12 +88,18 @@ Statement Parser::parseDeclaration() {
         var.name = peek().value;
     }
 
+    var.location = peek().location;
+
     consume(TokenType::Identifier);
     consume(TokenType::Colon);
 
     var.type = parseType();
     // parseType() now consumes the token as well
     consume(TokenType::Semicolon);
+    //consume doesnt advance if theres an error
+    if (peek().type == TokenType::Semicolon) {
+        parseStatement();
+    }
 
     statement.value = var;
     return statement;
@@ -108,9 +118,11 @@ TokenType Parser::parseType(){
         consume(TokenType::BoolType);
         return TokenType::BoolType;
     }
-
-    cerr << "Expected type, found " << tokenTypeToString(peek().type) << endl;
-    exit(1);
+    diagnostics.error(
+        "Expected type, found " + tokenTypeToString(peek().type),
+        peek().location
+    );
+    return TokenType::Undefined;
 }
 
 Statement Parser::parseAssignment() {
@@ -119,11 +131,15 @@ Statement Parser::parseAssignment() {
     Assignment assignment;
 
     assignment.name = peek().value;
+    assignment.location = peek().location;
     consume(TokenType::Identifier);
     consume(TokenType::Assign);
 
     assignment.value = parseLogicOr();
     consume(TokenType::Semicolon);
+    if (peek().type == TokenType::Semicolon) {
+        parseStatement();
+    }
 
     statement.value = std::move(assignment);
     return statement;
@@ -138,6 +154,7 @@ Expression Parser::parseUnary() {
 
         Expression result;
         result.value = std::move(unary);
+        result.location = peek().location;
         return result;
     }
     return parseFactor();
@@ -161,6 +178,7 @@ Expression Parser::parseLogicOr() {
         binary->right = std::make_unique<Expression>(std::move(right));
 
         Expression result;
+        result.location = peek().location;
         result.value = std::move(binary);
 
         left = std::move(result);
@@ -187,6 +205,7 @@ Expression Parser::parseLogicAnd() {
         binary->right = std::make_unique<Expression>(std::move(right));
 
         Expression result;
+        result.location = peek().location;
         result.value = std::move(binary);
 
         left = std::move(result);
@@ -213,6 +232,7 @@ Expression Parser::parseEquality() {
         binary->right = std::make_unique<Expression>(std::move(right));
 
         Expression result;
+        result.location = peek().location;
         result.value = std::move(binary);
 
         left = std::move(result);
@@ -239,6 +259,7 @@ Expression Parser::parseComparison() {
         binary->right = std::make_unique<Expression>(std::move(right));
 
         Expression result;
+        result.location = peek().location;
         result.value = std::move(binary);
 
         left = std::move(result);
@@ -266,6 +287,7 @@ Expression Parser::parseExpression() {
 
         Expression result;
         result.value = std::move(binary);
+        result.location = peek().location;
 
         left = std::move(result);
     }
@@ -289,6 +311,7 @@ Expression Parser::parseTerm() {
         binary->right = std::make_unique<Expression>(std::move(right));
 
         Expression result;
+        result.location = peek().location;
         result.value = std::move(binary);
 
         left = std::move(result);
@@ -299,6 +322,7 @@ Expression Parser::parseTerm() {
 
 Expression Parser::parseFactor() {
     Expression result;
+    result.location = peek().location;
     if (check(TokenType::OpenParen)) {
         consume(TokenType::OpenParen);
         result = parseLogicOr(); //highest precedence
@@ -327,17 +351,19 @@ Expression Parser::parseFactor() {
         advance();
     }
     else {
-        cerr << "Expected expression, found "
-        << tokenTypeToString(peek().type) << endl;
-        exit(1);
+        diagnostics.error(
+            "Expected expression, found " + tokenTypeToString(peek().type),
+            peek().location
+        );
     }
     return result;
 }
 
 //public
-Parser::Parser(const std::vector <Token> &toks) {
-    this->tokens = toks;
-}
+Parser::Parser(const std::vector <Token> &toks, Diagnostics &diagnostics) :
+    tokens(toks),
+    diagnostics(diagnostics) {}
+
 
 Program Parser::parse() {
     parseProgram();

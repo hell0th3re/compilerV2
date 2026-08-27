@@ -2,11 +2,12 @@
 #include <fstream>
 
 #include "CodeGenerator.h"
+#include "Diagnostics.h"
 #include "IR.h"
 #include "Lexer.h"
 #include "Parser.h"
 #include "SemanticAnalyzer.h"
-
+#include <algorithm>
 using namespace std;
 
 class Compiler {
@@ -15,6 +16,34 @@ class Compiler {
     Program progChecked;
     IRProgram irProg;
     string code;
+    Diagnostics diagnostics;
+
+    void printDiag() {
+        vector<Diagnostic> sorted = diagnostics.getAll();
+
+        std::sort(sorted.begin(), sorted.end(), [](const Diagnostic& a, const Diagnostic& b) {
+            return a.location.column < b.location.column;
+        });
+
+        std::sort(sorted.begin(), sorted.end(), [](const Diagnostic& a, const Diagnostic& b) {
+            return a.location.line < b.location.line;
+        });
+
+        for (const auto& el : sorted) {
+            string severity;
+
+            if (el.severity == Severity::Error) {
+                severity = "Error ";
+            }
+            else if (el.severity == Severity::Warning) {
+                severity = "Warning ";
+            }
+
+            cerr << severity << "on line " << el.location.line << ", column " << el.location.column << ":" << endl;
+            cerr << el.message << endl;
+            cerr << endl;
+        }
+    }
 
     public:
     void compile(const string &fileInName, const string &fileOutName) {
@@ -26,18 +55,24 @@ class Compiler {
             exit(1);
         }
 
-        Lexer lexer(file);
+        Lexer lexer(file, diagnostics);
         tokens = lexer.lex();
 
-        Parser parser(tokens);
+        Parser parser(tokens, diagnostics);
         prog = parser.parse();
+        //printDiag();
 
-        SemanticAnalyzer semanticAnalyzer(std::move(prog));
+        SemanticAnalyzer semanticAnalyzer(std::move(prog), diagnostics);
         progChecked = semanticAnalyzer.analyze();
+
+        if (!diagnostics.getAll().empty()) {
+            printDiag();
+            exit(1);
+        }
 
         IRGenerator generator(std::move(progChecked));
         irProg = generator.generateIR();
-        std::cout << std::endl;
+
         CodeGenerator codeGen(std::move(irProg));
         code = codeGen.generate();
 

@@ -1,9 +1,5 @@
 #include "SemanticAnalyzer.h"
-
-#include <cmath>
 #include <iostream>
-#include <math.h>
-#include <utility>
 
 using namespace std;
 
@@ -14,31 +10,39 @@ void SemanticAnalyzer::process() {
 
             const VariableDeclaration &declaration = std::get<VariableDeclaration>(statement.value);
             if (variables.contains(declaration.name)) {
-                cerr << "Variable " << declaration.name << " is already defined"<< endl;
-                exit(1);
+                diagnostics.error(
+                    "Variable \'" + declaration.name + "\' is already defined",
+                    declaration.location
+                );
             }
-
-            variables.insert({declaration.name, declaration.type});
+            else {
+                variables.insert({declaration.name, declaration.type});
+            }
         }
 
         else if (holds_alternative<Assignment>(statement.value)) {
             const Assignment &assignment = std::get<Assignment>(statement.value);
 
-            if (!variables.contains(assignment.name)) {
-                cerr << assignment.name << " was not declared" << endl;
-                exit(1);
+            if (variables.contains(assignment.name)) {
+                assignments.insert(assignment.name);
+
+                const TokenType variableType = variables.at(assignment.name);
+                const TokenType expressionType = getExpressionType(assignment.value);
+
+
+                if (variableType != expressionType) {
+                    diagnostics.error(
+                        "Type error: Expected " +  tokenTypeToString(variableType)
+                        + ", got " + tokenTypeToString(expressionType),
+                        assignment.value.location //changed this
+                    );
+                }
             }
-
-            assignments.insert(assignment.name);
-
-            const TokenType variableType = variables.at(assignment.name);
-            const TokenType expressionType = getExpressionType(assignment.value);
-
-
-            if (variableType != expressionType) {
-                cerr << "Type error. Expected " <<  tokenTypeToString(variableType)
-                << ", got " << tokenTypeToString(expressionType) << endl;
-                exit(1);
+            else {
+                diagnostics.error(
+                    "Variable \'" + assignment.name + "\' was not declared",
+                    assignment.location
+                );
             }
         }
 
@@ -68,14 +72,20 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
         const string &name = std::get<string>(expression.value);
 
         if (!assignments.contains(name)) {
-            cerr << "Operation on variable " << name << " before assignment" << endl;
-            exit(1);
+            diagnostics.error(
+            "Operation on variable " + name + " before assignment",
+                expression.location
+            );
         }
         if (!variables.contains(name)) {
-            cerr << name << " was not declared" << endl;
-            exit(1);
+            diagnostics.error(
+                name + " was not declared",
+                expression.location
+            );
         }
-        return variables.at(name);
+        else {
+            return variables.at(name);
+        }
     }
 
     if (holds_alternative<std::unique_ptr<UnaryExpression>>(expression.value)) {
@@ -86,8 +96,11 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
         if (unary.op == TokenType::Not && operandType == TokenType::BoolType) {
             return TokenType::BoolType;
         }
-        cerr << "Expression error: negation of a non-bool value" << endl;
-        exit(1);
+        diagnostics.error(
+        "Expression error: negation of a non-bool value",
+            unary.operand->location
+        );
+        return TokenType::Undefined;
     }
 
     if (holds_alternative<std::unique_ptr<BinaryExpression>>(expression.value)) {
@@ -99,8 +112,11 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
 
 
         if (leftType != rightType) {
-            cerr << "Expression error: incompatible types" << endl;
-            exit(1);
+            diagnostics.error(
+                "Expression error: incompatible types",
+                binary.right->location
+            );
+            return TokenType::Undefined;
         }
 
         //const Expression &leftValue = *binary.left;
@@ -131,6 +147,7 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
                 exit(1);
         }
     }
+
 
     cerr << "Unknown expression type" <<endl;
     exit(1);
@@ -178,9 +195,9 @@ void SemanticAnalyzer::checkArithmetic(TokenType opType, const BinaryExpression 
 }
 
 //public
-SemanticAnalyzer::SemanticAnalyzer(Program program) {
-    this->program = std::move(program);
-}
+SemanticAnalyzer::SemanticAnalyzer(Program program, Diagnostics &diagnostics) :
+    program(std::move(program)),
+    diagnostics(diagnostics) {}
 
 Program SemanticAnalyzer::analyze() {
     process();
