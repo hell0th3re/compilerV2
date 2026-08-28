@@ -42,17 +42,31 @@ struct Exit{
     Expression value;
 };
 
+struct Block;
+
+struct IfStatement {
+    Expression condition;
+    std::unique_ptr<Block> thenBlock;
+};
+
 struct Statement {
     std::variant<
         VariableDeclaration,
         Assignment,
-        Exit
+        Exit,
+        IfStatement
     > value;
+};
+
+struct Block {
+    std::vector <Statement> statements;
 };
 
 struct Program {
     std::vector <Statement> statements;
 };
+
+
 
 class Parser {
     Program program;
@@ -67,6 +81,7 @@ class Parser {
     void parseProgram();
     Statement parseStatement();
     void synchronise();
+    Statement parseIfStatement();
     Statement parseExit();
     Statement parseDeclaration();
     Statement parseAssignment();

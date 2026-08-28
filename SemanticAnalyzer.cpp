@@ -54,6 +54,16 @@ void SemanticAnalyzer::process() {
                 exit(1);
             }
         }
+
+        else if (holds_alternative<IfStatement>(statement.value)) {
+            const IfStatement &ifStatement = std::get<IfStatement>(statement.value);
+            if (getExpressionType(ifStatement.condition) != TokenType::BoolType) {
+                diagnostics.error(
+                    "Condition must be of bool type",
+                    ifStatement.condition.location
+                );
+            }
+        }
     }
 }
 

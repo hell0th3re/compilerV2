@@ -20,7 +20,6 @@ bool Parser::isAtEnd() const {
 }
 
 void Parser::consume(TokenType type){
-
     if (check(type)) {
         advance();
     }
@@ -30,7 +29,7 @@ void Parser::consume(TokenType type){
             ", found: " + tokenTypeToString(peek().type),
             peek().location
         );
-
+        synchronise();
     }
 }
 
@@ -43,18 +42,21 @@ void Parser::parseProgram(){
 }
 
 void Parser::synchronise() {
-    if (peek().type == TokenType::Let || peek().type == TokenType::Identifier || peek().type == TokenType::Exit) {
+    if (isAtEnd()) {
+        parseProgram();
+    }
+    else if (peek().type == TokenType::Let || peek().type == TokenType::Identifier || peek().type == TokenType::Exit) {
         parseStatement();
     }
     else if (peek().type == TokenType::OpenParen || peek().type == TokenType::CloseParen) {
         parseFactor();
     }
+    else if (peek().type == TokenType::If) {
+        parseIfStatement();
+    }
     else if (peek().type == TokenType::Undefined) {
         advance();
         synchronise();
-    }
-    else if (isAtEnd()) {
-        parseProgram();
     }
     else {
         consume(peek().type);
@@ -73,6 +75,9 @@ Statement Parser::parseStatement() {
     else if (peek().type == TokenType::Exit) {
         statement = parseExit();
     }
+    else if (peek().type == TokenType::If) {
+        statement = parseIfStatement();
+    }
     else {
         diagnostics.error(
             "Unexpected token: " + tokenTypeToString(peek().type),
@@ -80,6 +85,25 @@ Statement Parser::parseStatement() {
         );
         synchronise();
     }
+    return statement;
+}
+
+Statement Parser::parseIfStatement() {
+    Statement statement;
+    Block block;
+    IfStatement ifStat;
+    consume(TokenType::If);
+    consume(TokenType::OpenParen);
+    Expression condition = parseLogicOr();
+    consume(TokenType::CloseParen);
+    consume(TokenType::OpenBraces);
+    while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
+        block.statements.push_back(parseStatement());
+    }
+    consume(TokenType::CloseBraces);
+    ifStat.condition = std::move(condition);
+    ifStat.thenBlock = std::make_unique<Block>(std::move(block));
+    statement.value = std::move(ifStat);
     return statement;
 }
 
@@ -111,13 +135,7 @@ Statement Parser::parseDeclaration() {
     consume(TokenType::Colon);
 
     var.type = parseType();
-    // parseType() now consumes the token as well
     consume(TokenType::Semicolon);
-    //consume doesnt advance if theres an error
-    if (peek().type == TokenType::Semicolon) {
-        synchronise();
-        //parseStatement();
-    }
 
     statement.value = var;
     return statement;
@@ -152,17 +170,8 @@ Statement Parser::parseAssignment() {
     assignment.location = peek().location;
     consume(TokenType::Identifier);
     consume(TokenType::Assign);
-    if (peek().type == TokenType::Assign) {
-        synchronise();
-    }
-
     assignment.value = parseLogicOr();
     consume(TokenType::Semicolon);
-    if (peek().type == TokenType::Semicolon) {
-        // parseStatement();
-        synchronise();
-    }
-
     statement.value = std::move(assignment);
     return statement;
 }
@@ -347,14 +356,8 @@ Expression Parser::parseFactor() {
     result.location = peek().location;
     if (check(TokenType::OpenParen)) {
         consume(TokenType::OpenParen);
-        if (peek().type == TokenType::OpenParen) {
-            synchronise();
-        }
         result = parseLogicOr(); //highest precedence
         consume(TokenType::CloseParen);
-        if (peek().type == TokenType::CloseParen) {
-            synchronise();
-        }
     }
     else if (check(TokenType::Integer)) {
 

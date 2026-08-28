@@ -88,7 +88,6 @@ void Lexer::tokenize() {
                         "Invalid char literal",
                         TokenStart
                     );
-                    //cerr << "Invalid char literal" << endl;
                 }
                 token.type = TokenType::Character; //charLit
                 token.value = charBuff;
@@ -104,7 +103,6 @@ void Lexer::tokenize() {
                     "Char too long",
                     TokenStart
                 );
-                //cerr << "Char too long" << endl;
             }
             consume(ch);
             charIter++;
@@ -128,7 +126,6 @@ void Lexer::tokenize() {
                         "Unknown token type: " + buffer,
                         TokenStart
                     );
-                    //cerr << "Unknown token type: " << buffer << endl;
                 }
 
                 token.value = buffer;
@@ -150,6 +147,8 @@ void Lexer::tokenize() {
             ch == '/' ||
             ch == '(' ||
             ch == ')' ||
+            ch == '{' ||
+            ch == '}' ||
             ch == '>' ||
             ch == '<' ||
             ch == '!' ||
@@ -166,7 +165,6 @@ void Lexer::tokenize() {
                         "Unknown token type: " + buffer,
                         TokenStart
                     );
-                    //cerr << "Unknown token type: " << buffer << endl;
                 }
                 token.value = buffer;
                 token.location = TokenStart;
@@ -225,7 +223,6 @@ void Lexer::tokenize() {
             string singleCharStr(1, ch);
             token.type = getTokenType(singleCharStr);
             if (token.type == TokenType::Undefined) {
-                //cerr << "Unknown seperator: " << singleCharStr << endl;
                 diagnostics.error(
                     "Unknown seperator: " + singleCharStr,
                     TokenStart
@@ -249,7 +246,6 @@ void Lexer::tokenize() {
             "Unterminated char literal",
             TokenStart
             );
-        //cerr << "Unterminated character literal " << endl;
     }
 
     // Process the last word
@@ -260,7 +256,6 @@ void Lexer::tokenize() {
                     "Unknown token type: " + buffer,
                     TokenStart
                 );
-            //cerr << "Unknown token type: " << buffer << endl;
         }
 
         token.value = buffer;

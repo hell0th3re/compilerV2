@@ -21,12 +21,11 @@ class Compiler {
     void printDiag() {
         vector<Diagnostic> sorted = diagnostics.getAll();
 
-        std::sort(sorted.begin(), sorted.end(), [](const Diagnostic& a, const Diagnostic& b) {
+        std::sort(sorted.begin(), sorted.end(),[](const Diagnostic& a, const Diagnostic& b) {
+            if (a.location.line != b.location.line) {
+                return a.location.line < b.location.line;
+            }
             return a.location.column < b.location.column;
-        });
-
-        std::sort(sorted.begin(), sorted.end(), [](const Diagnostic& a, const Diagnostic& b) {
-            return a.location.line < b.location.line;
         });
 
         for (const auto& el : sorted) {
@@ -60,7 +59,6 @@ class Compiler {
 
         Parser parser(tokens, diagnostics);
         prog = parser.parse();
-        //printDiag();
 
         SemanticAnalyzer semanticAnalyzer(std::move(prog), diagnostics);
         progChecked = semanticAnalyzer.analyze();

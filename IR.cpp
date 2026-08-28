@@ -3,26 +3,68 @@
 
 void IRGenerator::process() {
     for (const Statement &statement : parsedProg.statements) {
+        generateStatement(statement);
+    }
+}
+
+void IRGenerator::generateStatement(const Statement &statement) {
+        Statement newStatement;
         if (holds_alternative<Assignment>(statement.value)) {
             const Assignment &assignment = std::get<Assignment>(statement.value);
-            IRValue varValue = generateExpression(assignment.value);
-
-            IRInstruction assignInstruction;
-            assignInstruction.op = IROp::Move;
-            assignInstruction.left = varValue;
-            assignInstruction.destination = assignment.name;
-            irProg.instructions.push_back(std::move(assignInstruction));
+            generateAssignment(assignment);
         }
         if (std::holds_alternative<Exit>(statement.value)) {
             const Exit &exitCall = std::get<Exit>(statement.value);
-            IRInstruction exitInstruction;
-            exitInstruction.op = OpToIROp(TokenType::Exit); // should return Exit
-            exitInstruction.left = generateExpression(exitCall.value);
-            exitInstruction.destination = "exit";
-            irProg.instructions.push_back(std::move(exitInstruction));
+            generateExit(exitCall);
             return;
         }
+        if (std::holds_alternative<IfStatement>(statement.value)) {
+            const IfStatement &ifStatement = std::get<IfStatement>(statement.value);
+            generateIf(ifStatement);
+        }
+}
+
+void IRGenerator::generateAssignment(const Assignment &assignment) {
+    IRValue varValue = generateExpression(assignment.value);
+
+    IRInstruction assignInstruction;
+    assignInstruction.op = IROp::Move;
+    assignInstruction.left = varValue;
+    assignInstruction.destination = assignment.name;
+    irProg.instructions.push_back(std::move(assignInstruction));
+}
+
+void IRGenerator::generateIf(const IfStatement &ifStatement) {
+    //the if
+
+    IRInstruction ifInstruction;
+    std::string label = newLabel();
+
+    ifInstruction.op = IROp::JumpIfFalse;
+    ifInstruction.destination = label;
+    ifInstruction.left = generateExpression(ifStatement.condition);
+
+    irProg.instructions.push_back(std::move(ifInstruction));
+
+    for (auto &statement : ifStatement.thenBlock->statements) {
+        // if (std::holds_alternative<IfStatement>(statement.value)) {
+        //     generateIf(std::get<IfStatement>(statement.value));
+        // }
+        generateStatement(statement);
     }
+
+    IRInstruction makeLabel;
+    makeLabel.destination = label;
+    makeLabel.op = IROp::Label;
+    irProg.instructions.push_back(makeLabel);
+}
+
+void IRGenerator::generateExit(const Exit &exitCall) {
+    IRInstruction exitInstruction;
+    exitInstruction.op = OpToIROp(TokenType::Exit); // should return Exit
+    exitInstruction.left = generateExpression(exitCall.value);
+    exitInstruction.destination = "exit";
+    irProg.instructions.push_back(std::move(exitInstruction));
 }
 
 IRValue IRGenerator::generateExpression(const Expression &expr) {
@@ -72,7 +114,13 @@ IRValue IRGenerator::generateExpression(const Expression &expr) {
         instruction.op = irOp;
         instruction.left = left;
         instruction.right = right;
-        instruction.destination = newTemporary();
+        if (instruction.op != IROp::Label) {
+            instruction.destination = newTemporary();
+        }
+        else {
+            instruction.destination = newLabel();
+        }
+
         irVal.value = instruction.destination;
 
         irProg.instructions.push_back(std::move(instruction));
@@ -83,8 +131,14 @@ IRValue IRGenerator::generateExpression(const Expression &expr) {
     exit(1);
 }
 
+
+
 std::string IRGenerator::newTemporary() {
     return "t" + std::to_string(tempVarCounter++);
+}
+
+std::string IRGenerator::newLabel() {
+    return "L" + std::to_string(labelCounter++);
 }
 
 IROp IRGenerator::OpToIROp(TokenType binOp) {
@@ -111,6 +165,8 @@ IROp IRGenerator::OpToIROp(TokenType binOp) {
             return IROp::Or;
         case TokenType::Not:
             return IROp::Not;
+        case TokenType::If:
+            return IROp::JumpIfFalse;
         case TokenType::Exit:
             return IROp::Exit;
         default:
@@ -141,6 +197,10 @@ static std::string opToString(IROp op) {
             return "<";
         case IROp::CompareGreater:
             return ">";
+        case IROp::JumpIfFalse:
+            return "JumpIfFalse";
+        case IROp::Label:
+            return "Label";
         case IROp::Not:
             return "!";
         case IROp::Exit:
@@ -174,12 +234,25 @@ static std::string irValueToString(const IRValue& value) {
 void IRGenerator::printIRCode() {
     for (const IRInstruction &instruction : irProg.instructions) {
 
-        std::cout << instruction.destination;
-        if (instruction.op != IROp::Move && instruction.op != IROp::Exit) {
-            std::cout << " = ";
+        if (instruction.op == IROp::Label) {
+            std::cout << "Label " << instruction.destination << " ";
+        }
+        else if (instruction.op == IROp::JumpIfFalse) {
+            std::cout << "JumpIfFalse " << irValueToString(instruction.left) << ", " << instruction.destination << " ";
         }
         else {
+            std::cout << instruction.destination;
+        }
+
+        if (instruction.op == IROp::Move || instruction.op == IROp::Exit) {
             std::cout << " <- ";
+        }
+        else if (instruction.op == IROp::JumpIfFalse || instruction.op == IROp::Label) {
+            std::cout << std::endl;
+            continue;
+        }
+        else {
+            std::cout << " = ";
         }
 
         if (instruction.op == IROp::Not) {
@@ -188,7 +261,9 @@ void IRGenerator::printIRCode() {
             std::cout << std::endl;
             continue;
         }
+
         std::cout << irValueToString(instruction.left) << " ";
+
         if (instruction.op != IROp::Move && instruction.op != IROp::Exit) {
             std::cout << opToString(instruction.op) << " ";
             if (!instruction.right.has_value()) {
@@ -205,6 +280,7 @@ void IRGenerator::printIRCode() {
 IRGenerator::IRGenerator(Program parsedProg) {
     this->parsedProg = std::move(parsedProg);
     tempVarCounter = 0;
+    labelCounter = 0;
 }
 
 IRProgram IRGenerator::generateIR() {

@@ -19,6 +19,7 @@ class Lexer {
     inline static std::map <std::string, TokenType> keywords = {
         {"let", TokenType::Let},
         {"exit", TokenType::Exit},
+        {"if", TokenType::If},
         {"=", TokenType::Assign},
         {"+", TokenType::Add},
         {"-", TokenType::Subtract},
@@ -27,6 +28,8 @@ class Lexer {
         {"(", TokenType::OpenParen},
         {")", TokenType::CloseParen},
         {">", TokenType::GreaterThan},
+        {"{", TokenType::OpenBraces},
+        {"}", TokenType::CloseBraces},
         {"<", TokenType::LessThan},
         {"==", TokenType::Equals},
         {"!=", TokenType::NotEquals},

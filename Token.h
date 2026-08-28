@@ -10,6 +10,7 @@ enum class TokenType {
     IntType,
     CharType,
     BoolType,
+    If,
 
     //Literials
     Integer,
@@ -32,6 +33,8 @@ enum class TokenType {
 
     OpenParen,
     CloseParen,
+    OpenBraces,
+    CloseBraces,
 
     //Punctuation
     Colon,
@@ -73,6 +76,12 @@ inline std::string tokenTypeToString(TokenType type) {
             return "Let";
         case TokenType::Exit:
             return "Exit";
+        case TokenType::If:
+            return "If";
+        case TokenType::OpenBraces:
+            return "OpenBraces";
+        case TokenType::CloseBraces:
+            return "CloseBraces";
         case TokenType::Add:
             return "Add";
         case TokenType::Or:
