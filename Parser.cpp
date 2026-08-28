@@ -101,6 +101,26 @@ Statement Parser::parseIfStatement() {
         block.statements.push_back(parseStatement());
     }
     consume(TokenType::CloseBraces);
+
+    if (peek().type == TokenType::Else) {
+        consume(TokenType::Else);
+        Block elseBlock;
+        bool consumeClose = true;
+        if (peek().type == TokenType::If) {
+            Statement elseStat = parseIfStatement();
+            elseBlock.statements.push_back(std::move(elseStat));
+          consumeClose = false;
+        }
+        consume(TokenType::OpenBraces);
+        while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
+            elseBlock.statements.push_back(parseStatement());
+        }
+        if (consumeClose) {
+            consume(TokenType::CloseBraces);
+        }
+
+        ifStat.elseBlock = std::make_unique<Block>(std::move(elseBlock));
+    }
     ifStat.condition = std::move(condition);
     ifStat.thenBlock = std::make_unique<Block>(std::move(block));
     statement.value = std::move(ifStat);

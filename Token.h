@@ -11,6 +11,7 @@ enum class TokenType {
     CharType,
     BoolType,
     If,
+    Else,
 
     //Literials
     Integer,
@@ -78,6 +79,8 @@ inline std::string tokenTypeToString(TokenType type) {
             return "Exit";
         case TokenType::If:
             return "If";
+        case TokenType::Else:
+            return "Else";
         case TokenType::OpenBraces:
             return "OpenBraces";
         case TokenType::CloseBraces:

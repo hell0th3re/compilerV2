@@ -47,6 +47,7 @@ struct Block;
 struct IfStatement {
     Expression condition;
     std::unique_ptr<Block> thenBlock;
+    std::unique_ptr<Block> elseBlock;
 };
 
 struct Statement {

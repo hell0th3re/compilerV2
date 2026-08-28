@@ -20,6 +20,7 @@ class Lexer {
         {"let", TokenType::Let},
         {"exit", TokenType::Exit},
         {"if", TokenType::If},
+        {"else", TokenType::Else},
         {"=", TokenType::Assign},
         {"+", TokenType::Add},
         {"-", TokenType::Subtract},
