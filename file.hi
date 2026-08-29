@@ -1,7 +1,7 @@
 let x: int;
 let y:char;
 x = 1;
-y = 'grgrgrg'
+y = 's';
 
 if (x > 2) {
     x = 10;

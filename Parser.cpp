@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include <utility>
 #include <iostream>
 
 const Token &Parser::peek() const{
@@ -19,18 +20,29 @@ bool Parser::isAtEnd() const {
     return peek().type == TokenType::Eof;
 }
 
-void Parser::consume(TokenType type){
+bool Parser::isStatementBoundary(TokenType type) const {
+    bool boundaryCheck = (
+             peek().type == TokenType::Let ||
+             peek().type == TokenType::Identifier ||
+             peek().type == TokenType::Exit ||
+             peek().type == TokenType::If ||
+             peek().type == TokenType::CloseBraces ||
+             peek().type == TokenType::Eof
+    );
+    return boundaryCheck;
+}
+
+bool Parser::consume(TokenType type){
     if (check(type)) {
         advance();
+        return true;
     }
-    else {
-        diagnostics.error(
-            "Expected: " + tokenTypeToString(type) +
-            ", found: " + tokenTypeToString(peek().type),
-            peek().location
-        );
-        synchronise();
-    }
+    diagnostics.error(
+        "Expected: " + tokenTypeToString(type) +
+        ", found: " + tokenTypeToString(peek().type),
+        peek().location
+    );
+    return false;
 }
 
 void Parser::parseProgram(){
@@ -38,29 +50,11 @@ void Parser::parseProgram(){
         Statement statement = parseStatement();
         program.statements.push_back(std::move(statement));
     }
-    std::cout << " ";
 }
 
 void Parser::synchronise() {
-    if (isAtEnd()) {
-        parseProgram();
-    }
-    else if (peek().type == TokenType::Let || peek().type == TokenType::Identifier || peek().type == TokenType::Exit) {
-        parseStatement();
-    }
-    else if (peek().type == TokenType::OpenParen || peek().type == TokenType::CloseParen) {
-        parseFactor();
-    }
-    else if (peek().type == TokenType::If) {
-        parseIfStatement();
-    }
-    else if (peek().type == TokenType::Undefined) {
+    while (!isStatementBoundary(peek().type)) {
         advance();
-        synchronise();
-    }
-    else {
-        consume(peek().type);
-        synchronise();
     }
 }
 
@@ -79,10 +73,15 @@ Statement Parser::parseStatement() {
         statement = parseIfStatement();
     }
     else {
+        ErrorStatement error{};
+        error.location = peek().location;
+
         diagnostics.error(
-            "Unexpected token: " + tokenTypeToString(peek().type),
+    "Unexpected token: " + tokenTypeToString(peek().type),
             peek().location
         );
+
+        statement.value = error;
         synchronise();
     }
     return statement;
@@ -92,11 +91,26 @@ Statement Parser::parseIfStatement() {
     Statement statement;
     Block block;
     IfStatement ifStat;
+
+    ifStat.location = peek().location;
+
     consume(TokenType::If);
-    consume(TokenType::OpenParen);
+
+    if (!consume(TokenType::OpenParen)) {
+        synchronise();
+    }
+
     Expression condition = parseLogicOr();
-    consume(TokenType::CloseParen);
-    consume(TokenType::OpenBraces);
+
+    if (!consume(TokenType::CloseParen)) {
+        synchronise();
+    }
+
+    block.location = peek().location;
+    if (!consume(TokenType::OpenBraces)) {
+        synchronise();
+    }
+
     while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
         block.statements.push_back(parseStatement());
     }
@@ -114,13 +128,18 @@ Statement Parser::parseIfStatement() {
             consumeOpen = false;
         }
         if (consumeOpen) {
-            consume(TokenType::OpenBraces);
+            elseBlock.location = peek().location;
+            if (!consume(TokenType::OpenBraces)) {
+                synchronise();
+            }
         }
         while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
             elseBlock.statements.push_back(parseStatement());
         }
         if (consumeClose) {
-            consume(TokenType::CloseBraces);
+            if (!consume(TokenType::CloseBraces)) {
+                synchronise();
+            }
         }
 
         ifStat.elseBlock = std::make_unique<Block>(std::move(elseBlock));
@@ -135,13 +154,17 @@ Statement Parser::parseExit() {
     Statement statement;
     Exit exit;
 
+    exit.location = peek().location;
+
     consume(TokenType::Exit);
     Expression temp = parseLogicOr();
 
     exit.value = std::move(temp);
     statement.value = std::move(exit);
 
-    consume(TokenType::Semicolon);
+    if (!consume(TokenType::Semicolon)) {
+        synchronise();
+    }
     return statement;
 }
 
@@ -155,11 +178,18 @@ Statement Parser::parseDeclaration() {
 
     var.location = peek().location;
 
-    consume(TokenType::Identifier);
-    consume(TokenType::Colon);
+    if (!consume(TokenType::Identifier)) {
+        synchronise();
+    }
+    if (!consume(TokenType::Colon)) {
+        synchronise();
+    }
 
     var.type = parseType();
-    consume(TokenType::Semicolon);
+
+    if (!consume(TokenType::Semicolon)) {
+        synchronise();
+    }
 
     statement.value = var;
     return statement;
@@ -192,24 +222,30 @@ Statement Parser::parseAssignment() {
 
     assignment.name = peek().value;
     assignment.location = peek().location;
-    consume(TokenType::Identifier);
-    consume(TokenType::Assign);
+    if (!consume(TokenType::Identifier)) {
+        synchronise();
+    }
+    if (!consume(TokenType::Assign)) {
+        synchronise();
+    }
     assignment.value = parseLogicOr();
-    consume(TokenType::Semicolon);
+    if (!consume(TokenType::Semicolon)) {
+        synchronise();
+    }
     statement.value = std::move(assignment);
     return statement;
 }
 
 Expression Parser::parseUnary() {
     if (peek().type == TokenType::Not) {
+        Expression result;
+        result.location = peek().location;
         consume(TokenType::Not);
         auto unary = std::make_unique<UnaryExpression>();
         unary->operand = std::make_unique<Expression>(parseUnary());
         unary->op = TokenType::Not;
-
-        Expression result;
         result.value = std::move(unary);
-        result.location = peek().location;
+
         return result;
     }
     return parseFactor();
@@ -220,9 +256,13 @@ Expression Parser::parseLogicOr() {
 
 
     while (check(TokenType::Or)) {
-
+        Expression result;
         TokenType opType = peek().type;
-        consume(opType);
+        result.location = peek().location;
+
+        if (!consume(opType)) {
+            synchronise();
+        }
 
         Expression right = parseLogicAnd();
 
@@ -232,10 +272,7 @@ Expression Parser::parseLogicOr() {
         binary->left = std::make_unique<Expression>(std::move(left));
         binary->right = std::make_unique<Expression>(std::move(right));
 
-        Expression result;
-        result.location = peek().location;
         result.value = std::move(binary);
-
         left = std::move(result);
     }
 
@@ -247,9 +284,12 @@ Expression Parser::parseLogicAnd() {
 
 
     while (check(TokenType::And)) {
-
+        Expression result;
         TokenType opType = peek().type;
-        consume(opType);
+        result.location = peek().location;
+        if (!consume(opType)) {
+            synchronise();
+        }
 
         Expression right = parseEquality();
 
@@ -259,10 +299,7 @@ Expression Parser::parseLogicAnd() {
         binary->left = std::make_unique<Expression>(std::move(left));
         binary->right = std::make_unique<Expression>(std::move(right));
 
-        Expression result;
-        result.location = peek().location;
         result.value = std::move(binary);
-
         left = std::move(result);
     }
 
@@ -274,9 +311,13 @@ Expression Parser::parseEquality() {
 
 
     while (check(TokenType::Equals) || check(TokenType::NotEquals)) {
+        Expression result;
+        result.location = peek().location;
 
         TokenType opType = peek().type;
-        consume(opType);
+        if (!consume(opType)) {
+            synchronise();
+        }
 
         Expression right = parseComparison();
 
@@ -286,10 +327,7 @@ Expression Parser::parseEquality() {
         binary->left = std::make_unique<Expression>(std::move(left));
         binary->right = std::make_unique<Expression>(std::move(right));
 
-        Expression result;
-        result.location = peek().location;
         result.value = std::move(binary);
-
         left = std::move(result);
     }
 
@@ -301,10 +339,13 @@ Expression Parser::parseComparison() {
     Expression left = parseExpression();
 
     while (check(TokenType::GreaterThan) || check(TokenType::LessThan)) {
-
+        Expression result;
+        result.location = peek().location;
         TokenType opType = peek().type;
 
-        consume(opType);
+        if (!consume(opType)) {
+            synchronise();
+        }
         Expression right = parseExpression();
 
         auto binary = std::make_unique<BinaryExpression>();
@@ -313,10 +354,7 @@ Expression Parser::parseComparison() {
         binary->left = std::make_unique<Expression>(std::move(left));
         binary->right = std::make_unique<Expression>(std::move(right));
 
-        Expression result;
-        result.location = peek().location;
         result.value = std::move(binary);
-
         left = std::move(result);
     }
 
@@ -328,10 +366,13 @@ Expression Parser::parseExpression() {
     Expression left = parseTerm();
 
     while (check(TokenType::Add) || check(TokenType::Subtract)) {
-
+        Expression result;
         TokenType opType = peek().type;
+        result.location = peek().location;
 
-        consume(opType);
+        if (!consume(opType)) {
+            synchronise();
+        }
         Expression right = parseTerm();
 
         auto binary = std::make_unique<BinaryExpression>();
@@ -340,9 +381,7 @@ Expression Parser::parseExpression() {
         binary->left = std::make_unique<Expression>(std::move(left));
         binary->right = std::make_unique<Expression>(std::move(right));
 
-        Expression result;
         result.value = std::move(binary);
-        result.location = peek().location;
 
         left = std::move(result);
     }
@@ -356,7 +395,11 @@ Expression Parser::parseTerm() {
 
     while (check(TokenType::Multiply) || check(TokenType::Divide)) {
         TokenType opType = peek().type;
-        consume(opType);
+        Expression result;
+        result.location = peek().location;
+        if (!consume(opType)) {
+            synchronise();
+        }
 
         Expression right = parseUnary();
         auto binary = std::make_unique<BinaryExpression>();
@@ -365,8 +408,7 @@ Expression Parser::parseTerm() {
         binary->left = std::make_unique<Expression>(std::move(left));
         binary->right = std::make_unique<Expression>(std::move(right));
 
-        Expression result;
-        result.location = peek().location;
+
         result.value = std::move(binary);
 
         left = std::move(result);
@@ -381,7 +423,9 @@ Expression Parser::parseFactor() {
     if (check(TokenType::OpenParen)) {
         consume(TokenType::OpenParen);
         result = parseLogicOr(); //highest precedence
-        consume(TokenType::CloseParen);
+        if (!consume(TokenType::CloseParen)) {
+            synchronise();
+        }
     }
     else if (check(TokenType::Integer)) {
 
@@ -406,11 +450,15 @@ Expression Parser::parseFactor() {
         advance();
     }
     else {
+        ErrorExpression error{};
+        error.location = peek().location;
+
         diagnostics.error(
-            "Expected expression, found " + tokenTypeToString(peek().type),
+    "Unexpected token: " + tokenTypeToString(peek().type),
             peek().location
         );
-        consume(peek().type);
+
+        result.value = error;
         synchronise();
     }
     return result;

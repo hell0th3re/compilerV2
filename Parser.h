@@ -25,10 +25,17 @@ struct BinaryExpression {
     TokenType op;
 };
 
+struct ErrorExpression {
+    //TokenType type;
+    Location location;
+    //std::string message;
+};
+
 struct Expression {
     std::variant<int, char, bool, std::string,
     std::unique_ptr<BinaryExpression>,
-    std::unique_ptr<UnaryExpression>> value;
+    std::unique_ptr<UnaryExpression>,
+    ErrorExpression> value;
     Location location;
 };
 
@@ -40,6 +47,7 @@ struct Assignment {
 
 struct Exit{
     Expression value;
+    Location location;
 };
 
 struct Block;
@@ -48,6 +56,13 @@ struct IfStatement {
     Expression condition;
     std::unique_ptr<Block> thenBlock;
     std::unique_ptr<Block> elseBlock;
+    Location location;
+};
+
+struct ErrorStatement {
+    //TokenType type;
+    Location location;
+    //std::string message;
 };
 
 struct Statement {
@@ -55,12 +70,14 @@ struct Statement {
         VariableDeclaration,
         Assignment,
         Exit,
-        IfStatement
+        IfStatement,
+        ErrorStatement
     > value;
 };
 
 struct Block {
     std::vector <Statement> statements;
+    Location location;
 };
 
 struct Program {
@@ -76,9 +93,10 @@ class Parser {
     Diagnostics &diagnostics;
     [[nodiscard]] bool isAtEnd() const;
     [[nodiscard]] const Token &peek() const;
+    bool isStatementBoundary(TokenType type) const;
     void advance();
     [[nodiscard]] bool check(TokenType type) const;
-    void consume(TokenType type);
+    bool consume(TokenType type);
     void parseProgram();
     Statement parseStatement();
     void synchronise();
