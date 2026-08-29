@@ -55,6 +55,7 @@ class IRGenerator {
     std::string newTemporary();
     std::string newLabel();
     static IROp OpToIROp(TokenType binOp);
+    static std::string irValueToString(const IRValue& value);
     void printIRCode();
 public:
     explicit IRGenerator(Program parsedProg);

@@ -252,7 +252,7 @@ static std::string opToString(IROp op) {
     }
 }
 
-static std::string irValueToString(const IRValue& value) {
+std::string IRGenerator::irValueToString(const IRValue& value) {
     if (std::holds_alternative<int>(value.value)) {
         return std::to_string(std::get<int>(value.value));
     }

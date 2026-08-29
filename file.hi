@@ -4,8 +4,10 @@ x = 1;
 
 if (x > 2) {
     x = 10;
-} else if (x == 2) {
+}
+else if (x > 3) {
     x = 5;
-} else {
+}
+else {
     x = 0;
 }

@@ -32,13 +32,51 @@ void CodeGenerator::process() {
             generateMove(instruction, "rax");
             continue;
         }
+
         if (instruction.op == IROp::Not) {
             generateUnary(instruction, "rax");
         }
+
+        if (instruction.op == IROp::Jump) {
+            generateJump(instruction);
+        }
+
+        if (instruction.op == IROp::JumpIfFalse) {
+            generateJumpIfFalse(instruction, "rax");
+        }
+
+        if (instruction.op == IROp::Label) {
+            generateLabel(instruction);
+        }
+
         else {
             generateBinary(instruction, "rax");
         }
     }
+}
+
+void CodeGenerator::generateLabel(const IRInstruction &instruction) {
+    std::stringstream codeTemp;
+    std::string labelName = instruction.destination;
+    codeTemp << "." << labelName << ":" << std::endl;
+    code += codeTemp.str();
+}
+
+void CodeGenerator::generateJumpIfFalse(const IRInstruction &instruction, const std::string &reg) {
+    std::stringstream codeTemp;
+    std::string labelDestination = instruction.destination; //might have gotten it the wrong way around, prob not
+    IRValue conditionVar = instruction.left;
+    codeTemp << loadValue(conditionVar, reg);
+    codeTemp << "cmp " << reg << ", 0" << std::endl;
+    codeTemp << "je ." << labelDestination << std::endl;
+    code += codeTemp.str();
+}
+
+void CodeGenerator::generateJump(const IRInstruction &instruction) {
+    std::stringstream codeTemp;
+    std::string labelDestination = instruction.destination; //might have gotten it the wrong way around, prob not
+    codeTemp << "jmp ." << labelDestination << std::endl;
+    code += codeTemp.str();
 }
 
 void CodeGenerator::generateExit(const IRInstruction &instruction) {

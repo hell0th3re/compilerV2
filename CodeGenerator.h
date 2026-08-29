@@ -11,6 +11,9 @@ class CodeGenerator {
     std::string code;
     void process();
     void generateMove(const IRInstruction& instruction, const std::string &reg);
+    void generateJump(const IRInstruction& instruction);
+    void generateJumpIfFalse(const IRInstruction& instruction, const std::string &reg);
+    void generateLabel(const IRInstruction& instruction);
     void generateExit(const IRInstruction &instruction); // here
     void generateUnary(const IRInstruction& instruction, const std::string &reg);
     void generateBinary(const IRInstruction &instruction, const std::string &reg);
