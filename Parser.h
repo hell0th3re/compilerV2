@@ -26,9 +26,7 @@ struct BinaryExpression {
 };
 
 struct ErrorExpression {
-    //TokenType type;
     Location location;
-    //std::string message;
 };
 
 struct Expression {
@@ -60,9 +58,7 @@ struct IfStatement {
 };
 
 struct ErrorStatement {
-    //TokenType type;
     Location location;
-    //std::string message;
 };
 
 struct Statement {
@@ -83,8 +79,6 @@ struct Block {
 struct Program {
     std::vector <Statement> statements;
 };
-
-
 
 class Parser {
     Program program;

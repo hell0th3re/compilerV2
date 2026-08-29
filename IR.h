@@ -37,6 +37,31 @@ struct IRInstruction {
     IRValue left;
     std::optional<IRValue> right;
 };
+
+/*
+    Add:
+        destination = result
+        left = lhs
+        right = rhs
+
+    Move:
+        destination = variable
+        left = source
+
+    JumpIfFalse:
+        destination = label
+        left = condition
+
+    Jump:
+        destination = label
+
+    Label:
+        destination = label
+
+    Exit:
+        left = exit value
+ */
+
 struct IRProgram {
     std::vector<IRInstruction> instructions;
 };
@@ -46,6 +71,7 @@ class IRGenerator {
     int labelCounter;
     Program parsedProg;
     IRProgram irProg;
+    bool exitProg = false;
     void process();
     IRValue generateExpression(const Expression &expr);
     void generateStatement(const Statement &statement);

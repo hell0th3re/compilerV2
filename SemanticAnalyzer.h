@@ -24,11 +24,8 @@ struct Scope {
 class SemanticAnalyzer {
     Program program;
     void process();
-    std::map<std::string, TokenType> variables;
-    std::unordered_set<std::string> assignments;
     Diagnostics &diagnostics;
     std::vector<Scope> scopes;
-    //void update(const std::string &name, const Symbol &symbol);
     void enterScope();
     void leaveScope();
     bool declare(const std::string &name, const Symbol &symbol);

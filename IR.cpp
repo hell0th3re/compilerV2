@@ -3,22 +3,23 @@
 
 void IRGenerator::process() {
     for (const Statement &statement : parsedProg.statements) {
+        if (exitProg) return;
         generateStatement(statement);
     }
 }
 
 void IRGenerator::generateStatement(const Statement &statement) {
-        Statement newStatement;
         if (holds_alternative<Assignment>(statement.value)) {
             const Assignment &assignment = std::get<Assignment>(statement.value);
             generateAssignment(assignment);
         }
-        if (std::holds_alternative<Exit>(statement.value)) {
+        else if (std::holds_alternative<Exit>(statement.value)) {
             const Exit &exitCall = std::get<Exit>(statement.value);
             generateExit(exitCall);
+            exitProg = true;
             return;
         }
-        if (std::holds_alternative<IfStatement>(statement.value)) {
+        else if (std::holds_alternative<IfStatement>(statement.value)) {
             const IfStatement &ifStatement = std::get<IfStatement>(statement.value);
             generateIf(ifStatement);
         }
@@ -71,10 +72,6 @@ void IRGenerator::generateIf(const IfStatement &ifStatement) {
         }
 
         irProg.instructions.push_back(std::move(endLabel));
-
-        elseLabel.destination = newLabel();
-        elseLabel.op = IROp::Label;
-        ifInstruction.destination = elseLabel.destination;
     }
     else {
         IRInstruction endLabel;
@@ -151,13 +148,8 @@ IRValue IRGenerator::generateExpression(const Expression &expr) {
         instruction.op = irOp;
         instruction.left = left;
         instruction.right = right;
-        if (instruction.op != IROp::Label) {
-            instruction.destination = newTemporary();
-        }
-        else {
-            instruction.destination = newLabel();
-        }
 
+        instruction.destination = newTemporary();
         irVal.value = instruction.destination;
 
         irProg.instructions.push_back(std::move(instruction));
@@ -202,10 +194,6 @@ IROp IRGenerator::OpToIROp(TokenType binOp) {
             return IROp::Or;
         case TokenType::Not:
             return IROp::Not;
-        case TokenType::If:
-            return IROp::JumpIfFalse;
-        case TokenType::Else:
-            return IROp::Jump;
         case TokenType::Exit:
             return IROp::Exit;
         default:
@@ -322,9 +310,10 @@ void IRGenerator::printIRCode() {
 
 //public
 IRGenerator::IRGenerator(Program parsedProg) {
-    this->parsedProg = std::move(parsedProg);
+    irProg.instructions.clear();
     tempVarCounter = 0;
     labelCounter = 0;
+    this->parsedProg = std::move(parsedProg);
 }
 
 IRProgram IRGenerator::generateIR() {
