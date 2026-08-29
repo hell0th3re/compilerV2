@@ -5,64 +5,89 @@ using namespace std;
 
 void SemanticAnalyzer::process() {
     for (const Statement &statement : program.statements) {
+        processStatement(statement);
+    }
+}
 
+void SemanticAnalyzer::processStatement(const Statement &statement) {
         if (holds_alternative<VariableDeclaration>(statement.value)) {
-
             const VariableDeclaration &declaration = std::get<VariableDeclaration>(statement.value);
-            if (variables.contains(declaration.name)) {
-                diagnostics.error(
-                    "Variable \'" + declaration.name + "\' is already defined",
-                    declaration.location
-                );
-            }
-            else {
-                variables.insert({declaration.name, declaration.type});
-            }
+            processVariableDeclaration(declaration);
         }
 
         else if (holds_alternative<Assignment>(statement.value)) {
             const Assignment &assignment = std::get<Assignment>(statement.value);
-
-            if (variables.contains(assignment.name)) {
-                assignments.insert(assignment.name);
-
-                const TokenType variableType = variables.at(assignment.name);
-                const TokenType expressionType = getExpressionType(assignment.value);
-
-
-                if (variableType != expressionType) {
-                    diagnostics.error(
-                        "Type error: Expected " +  tokenTypeToString(variableType)
-                        + ", got " + tokenTypeToString(expressionType),
-                        assignment.value.location //changed this
-                    );
-                }
-            }
-            else {
-                diagnostics.error(
-                    "Variable \'" + assignment.name + "\' was not declared",
-                    assignment.location
-                );
-            }
+            processAssignment(assignment);
         }
 
         else if (holds_alternative<Exit>(statement.value)) {
             const Exit &exitCall = std::get<Exit>(statement.value);
-            TokenType exp = getExpressionType(exitCall.value); //see if the expression is valid
-            if (exp != TokenType::IntType && exp != TokenType::Identifier) {
-                cerr << "Exit code must be an integer literal, or an int type variable" << endl;
-                exit(1);
-            }
+            processExit(exitCall);
         }
 
         else if (holds_alternative<IfStatement>(statement.value)) {
             const IfStatement &ifStatement = std::get<IfStatement>(statement.value);
-            if (getExpressionType(ifStatement.condition) != TokenType::BoolType) {
-                diagnostics.error(
-                    "Condition must be of bool type",
-                    ifStatement.condition.location
-                );
-            }
+            processIfStatement(ifStatement);
+        }
+}
+
+void SemanticAnalyzer::processExit(const Exit &exitCall) {
+    TokenType exp = getExpressionType(exitCall.value); //see if the expression is valid
+    if (exp != TokenType::IntType && exp != TokenType::Identifier) {
+        cerr << "Exit code must be an integer literal, or an int type variable" << endl;
+        exit(1);
+    }
+}
+
+void SemanticAnalyzer::processAssignment(const Assignment &assignment) {
+    if (variables.contains(assignment.name)) {
+        assignments.insert(assignment.name);
+
+        const TokenType variableType = variables.at(assignment.name);
+        const TokenType expressionType = getExpressionType(assignment.value);
+
+
+        if (variableType != expressionType) {
+            diagnostics.error(
+                "Type error: Expected " +  tokenTypeToString(variableType)
+                + ", got " + tokenTypeToString(expressionType),
+                assignment.value.location //changed this
+            );
+        }
+    }
+    else {
+        diagnostics.error(
+            "Variable \'" + assignment.name + "\' was not declared",
+            assignment.location
+        );
+    }
+}
+
+void SemanticAnalyzer::processVariableDeclaration(const VariableDeclaration &declaration) {
+    if (variables.contains(declaration.name)) {
+        diagnostics.error(
+            "Variable \'" + declaration.name + "\' is already defined",
+            declaration.location
+        );
+    }
+    else {
+        variables.insert({declaration.name, declaration.type});
+    }
+}
+
+void SemanticAnalyzer::processIfStatement(const IfStatement &statement) {
+    if (getExpressionType(statement.condition) != TokenType::BoolType) {
+        diagnostics.error(
+            "Condition must be of bool type",
+            statement.condition.location
+        );
+    }
+    for (auto &blockStatement : statement.thenBlock->statements) {
+        processStatement(blockStatement);
+    }
+    if (!statement.elseBlock->statements.empty()) {
+        for (auto &blockStatement : statement.elseBlock->statements) {
+            processStatement(blockStatement);
         }
     }
 }

@@ -18,6 +18,11 @@ class SemanticAnalyzer {
     std::unordered_set<std::string> assignments;
     Diagnostics &diagnostics;
 
+    void processStatement(const Statement &statement);
+    void processIfStatement(const IfStatement &statement);
+    void processVariableDeclaration(const VariableDeclaration &declaration);
+    void processAssignment(const Assignment &assignment);
+    void processExit(const Exit &exitCall);
     TokenType getExpressionType(const Expression &expression);
     static opGeneral getGeneralType(TokenType opType);
     static void checkArithmetic(TokenType opType, const BinaryExpression &binary);
