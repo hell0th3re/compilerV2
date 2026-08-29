@@ -35,28 +35,65 @@ void IRGenerator::generateAssignment(const Assignment &assignment) {
 }
 
 void IRGenerator::generateIf(const IfStatement &ifStatement) {
-    //the if
-
+    bool hasElse = ifStatement.elseBlock != nullptr;
     IRInstruction ifInstruction;
-    std::string label = newLabel();
 
-    ifInstruction.op = IROp::JumpIfFalse;
-    ifInstruction.destination = label;
-    ifInstruction.left = generateExpression(ifStatement.condition);
+    if (hasElse) {
+        IRInstruction elseLabel;
+        elseLabel.op = IROp::Label;
+        elseLabel.destination = newLabel();
 
-    irProg.instructions.push_back(std::move(ifInstruction));
+        IRInstruction endLabel;
+        endLabel.op = IROp::Label;
+        endLabel.destination = newLabel();
 
-    for (auto &statement : ifStatement.thenBlock->statements) {
-        // if (std::holds_alternative<IfStatement>(statement.value)) {
-        //     generateIf(std::get<IfStatement>(statement.value));
-        // }
-        generateStatement(statement);
+        ifInstruction.op = IROp::JumpIfFalse;
+        ifInstruction.destination = elseLabel.destination;
+        ifInstruction.left = generateExpression(ifStatement.condition);
+
+        irProg.instructions.push_back(std::move(ifInstruction));
+
+        for (auto &statement : ifStatement.thenBlock->statements) {
+            generateStatement(statement);
+
+        }
+
+        IRInstruction jumpInstruction;
+        jumpInstruction.op = IROp::Jump;
+        jumpInstruction.destination = endLabel.destination;
+
+        irProg.instructions.push_back(std::move(jumpInstruction));
+
+        irProg.instructions.push_back(std::move(elseLabel));
+
+        for (auto &statement : ifStatement.elseBlock->statements) {
+            generateStatement(statement);
+        }
+
+        irProg.instructions.push_back(std::move(endLabel));
+
+        elseLabel.destination = newLabel();
+        elseLabel.op = IROp::Label;
+        ifInstruction.destination = elseLabel.destination;
+    }
+    else {
+        IRInstruction endLabel;
+        endLabel.op = IROp::Label;
+        endLabel.destination = newLabel();
+
+        ifInstruction.op = IROp::JumpIfFalse;
+        ifInstruction.destination = endLabel.destination;
+        ifInstruction.left = generateExpression(ifStatement.condition);
+
+        irProg.instructions.push_back(std::move(ifInstruction));
+
+        for (auto &statement : ifStatement.thenBlock->statements) {
+            generateStatement(statement);
+        }
+
+        irProg.instructions.push_back(std::move(endLabel));
     }
 
-    IRInstruction makeLabel;
-    makeLabel.destination = label;
-    makeLabel.op = IROp::Label;
-    irProg.instructions.push_back(makeLabel);
 }
 
 void IRGenerator::generateExit(const Exit &exitCall) {
@@ -167,6 +204,8 @@ IROp IRGenerator::OpToIROp(TokenType binOp) {
             return IROp::Not;
         case TokenType::If:
             return IROp::JumpIfFalse;
+        case TokenType::Else:
+            return IROp::Jump;
         case TokenType::Exit:
             return IROp::Exit;
         default:
@@ -199,6 +238,8 @@ static std::string opToString(IROp op) {
             return ">";
         case IROp::JumpIfFalse:
             return "JumpIfFalse";
+        case IROp::Jump:
+            return "Jump";
         case IROp::Label:
             return "Label";
         case IROp::Not:
@@ -240,6 +281,9 @@ void IRGenerator::printIRCode() {
         else if (instruction.op == IROp::JumpIfFalse) {
             std::cout << "JumpIfFalse " << irValueToString(instruction.left) << ", " << instruction.destination << " ";
         }
+        else if (instruction.op == IROp::Jump) {
+            std::cout << "Jump " << instruction.destination << " ";
+        }
         else {
             std::cout << instruction.destination;
         }
@@ -247,7 +291,7 @@ void IRGenerator::printIRCode() {
         if (instruction.op == IROp::Move || instruction.op == IROp::Exit) {
             std::cout << " <- ";
         }
-        else if (instruction.op == IROp::JumpIfFalse || instruction.op == IROp::Label) {
+        else if (instruction.op == IROp::JumpIfFalse || instruction.op == IROp::Label || instruction.op == IROp::Jump) {
             std::cout << std::endl;
             continue;
         }

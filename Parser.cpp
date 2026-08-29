@@ -106,12 +106,16 @@ Statement Parser::parseIfStatement() {
         consume(TokenType::Else);
         Block elseBlock;
         bool consumeClose = true;
+        bool consumeOpen = true;
         if (peek().type == TokenType::If) {
             Statement elseStat = parseIfStatement();
             elseBlock.statements.push_back(std::move(elseStat));
-          consumeClose = false;
+            consumeClose = false;
+            consumeOpen = false;
         }
-        consume(TokenType::OpenBraces);
+        if (consumeOpen) {
+            consume(TokenType::OpenBraces);
+        }
         while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
             elseBlock.statements.push_back(parseStatement());
         }
