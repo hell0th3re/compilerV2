@@ -1,14 +1,12 @@
 let x: int;
 let y:char;
 x = 1;
-y = 's';
+y = 'a';
 
 if (x > 2) {
-    x = 10;
+    let x:char;
 }
-else if (x > 3) {
-    x = 5;
-}
-else {
-    x = 0;
+else{
+    let y:char;
+    y = 'b';
 }

@@ -32,20 +32,34 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
 }
 
 void SemanticAnalyzer::processExit(const Exit &exitCall) {
-    TokenType exp = getExpressionType(exitCall.value); //see if the expression is valid
-    if (exp != TokenType::IntType && exp != TokenType::Identifier) {
+    if (getExpressionType(exitCall.value) != TokenType::IntType) {
         cerr << "Exit code must be an integer literal, or an int type variable" << endl;
         exit(1);
     }
 }
 
+void SemanticAnalyzer::update(const std::string &name, const Symbol &symbol) {
+    if (scopes.back().symbols.contains(name)) {
+        scopes.back().symbols.at(name) = symbol;
+    }
+    else {
+        diagnostics.error("Variable not declared", {});
+    }
+
+}
+
 void SemanticAnalyzer::processAssignment(const Assignment &assignment) {
-    if (variables.contains(assignment.name)) {
-        assignments.insert(assignment.name);
 
-        const TokenType variableType = variables.at(assignment.name);
+    if (lookup(assignment.name) != nullptr) {
+
+        Symbol assigSym = *lookup(assignment.name);
+
+        assigSym.type = lookup(assignment.name)->type;
+        assigSym.initialised = true;
+        update(assignment.name, assigSym);
+
+        const TokenType variableType = assigSym.type;
         const TokenType expressionType = getExpressionType(assignment.value);
-
 
         if (variableType != expressionType) {
             diagnostics.error(
@@ -64,15 +78,43 @@ void SemanticAnalyzer::processAssignment(const Assignment &assignment) {
 }
 
 void SemanticAnalyzer::processVariableDeclaration(const VariableDeclaration &declaration) {
-    if (variables.contains(declaration.name)) {
+    Symbol declarationSym{};
+    declarationSym.type = declaration.type;
+    declarationSym.initialised = false;
+    declare(declaration.name, declarationSym);
+}
+
+void SemanticAnalyzer::enterScope() {
+    scopes.push_back(Scope{});
+}
+
+void SemanticAnalyzer::leaveScope() {
+    scopes.pop_back();
+}
+
+void SemanticAnalyzer::declare(const std::string &name, const Symbol &symbol) {
+    //if defined in the current scope
+    if (scopes.back().symbols.contains(name)) {
         diagnostics.error(
-            "Variable \'" + declaration.name + "\' is already defined",
-            declaration.location
+            "Variable \'" + name + "\' is already defined",
+            {}
         );
+        return;
     }
-    else {
-        variables.insert({declaration.name, declaration.type});
+    scopes.back().symbols.insert({name, symbol});
+}
+
+const Symbol *SemanticAnalyzer::lookup(const std::string &name) const {
+    for (size_t i = scopes.size(); i > 0; --i) {
+        const Scope &scope = scopes[i - 1];
+
+        auto it = scope.symbols.find(name);
+        if (it != scope.symbols.end()) {
+            return &it->second;
+        }
     }
+
+    return nullptr;
 }
 
 void SemanticAnalyzer::processIfStatement(const IfStatement &statement) {
@@ -82,14 +124,22 @@ void SemanticAnalyzer::processIfStatement(const IfStatement &statement) {
             statement.condition.location
         );
     }
+    //const Symbol *sym = lookup("x");
+
+    enterScope();
     for (auto &blockStatement : statement.thenBlock->statements) {
         processStatement(blockStatement);
     }
-    if (!statement.elseBlock->statements.empty()) {
+    leaveScope();
+    
+    if (statement.elseBlock != nullptr) {
+        enterScope();
         for (auto &blockStatement : statement.elseBlock->statements) {
             processStatement(blockStatement);
         }
+        leaveScope();
     }
+    //const Symbol *sym2 = lookup("x");
 }
 
 TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
@@ -103,23 +153,24 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
         return TokenType::BoolType;
     }
     if (holds_alternative<string>(expression.value)) {
-        //returns the type of the variable in the variables map
         const string &name = std::get<string>(expression.value);
 
-        if (!assignments.contains(name)) {
+        const Symbol *temp = lookup(name);
+
+        if (temp != nullptr && temp->initialised == false) {
             diagnostics.error(
             "Operation on variable " + name + " before assignment",
                 expression.location
             );
         }
-        if (!variables.contains(name)) {
+        if (temp == nullptr) {
             diagnostics.error(
                 name + " was not declared",
                 expression.location
             );
         }
         else {
-            return variables.at(name);
+            return temp->type;
         }
     }
 
@@ -146,6 +197,14 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
         TokenType rightType = getExpressionType(*binary.right);
 
 
+        if (leftType == TokenType::Undefined) {
+            diagnostics.error(
+                "Expression error: incompatible types",
+                binary.right->location
+            );
+            return TokenType::Undefined;
+        }
+
         if (leftType != rightType) {
             diagnostics.error(
                 "Expression error: incompatible types",
@@ -165,27 +224,28 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
                     checkArithmetic(opType, binary);
                     return TokenType::IntType;
                 }
-                cerr << "Arithmetic on a non-int type" << endl;
-                exit(1);
+                diagnostics.error("Arithmetic on a non-int type", expression.location);
+                return TokenType::Undefined;
             case opGeneral::Logic:
                 if (leftType == TokenType::BoolType) return TokenType::BoolType;
-                cerr << "Logical operation on a non-boolean type" << endl;
-                exit(1);
+                diagnostics.error("Logical operation on a non-boolean type", expression.location);
+                return TokenType::Undefined;
             case opGeneral::Comparison:
                 if (leftType == TokenType::IntType) return TokenType::BoolType;
-                cerr << "'<' and '>' operators are not supported on non-int types" << endl;
-                exit(1);
+                diagnostics.error(
+        "'<' and '>' operators are not supported on non-int types",
+                    expression.location
+                    );
+                return TokenType::Undefined;
             case opGeneral::Equality:
                 return TokenType::BoolType; // "==" and "!=" are supported for all types
             default:
-                cerr << "Unknown operation" << endl;
-                exit(1);
+                diagnostics.error("Unknown operation", expression.location);
+                return TokenType::Undefined;
         }
     }
-
-
-    cerr << "Unknown expression type" <<endl;
-    exit(1);
+    diagnostics.error("Unknown expression type", expression.location);
+    return TokenType::Undefined;
 }
 
 opGeneral SemanticAnalyzer::getGeneralType(TokenType opType) {
@@ -235,6 +295,8 @@ SemanticAnalyzer::SemanticAnalyzer(Program program, Diagnostics &diagnostics) :
     diagnostics(diagnostics) {}
 
 Program SemanticAnalyzer::analyze() {
+    enterScope();
     process();
+    leaveScope();
     return std::move(program);
 }
