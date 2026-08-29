@@ -93,7 +93,7 @@ class Parser {
     Diagnostics &diagnostics;
     [[nodiscard]] bool isAtEnd() const;
     [[nodiscard]] const Token &peek() const;
-    bool isStatementBoundary(TokenType type) const;
+    [[nodiscard]] bool isStatementBoundary(TokenType type) const;
     void advance();
     [[nodiscard]] bool check(TokenType type) const;
     bool consume(TokenType type);

@@ -6,7 +6,3 @@ y = 'a';
 if (x > 2) {
     let x:char;
 }
-else{
-    let y:char;
-    y = 'b';
-}

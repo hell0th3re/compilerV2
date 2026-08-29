@@ -4,11 +4,12 @@
 #include <unordered_set>
 #include "Parser.h"
 
-enum class opGeneral {
+enum class OpGeneral {
     Arithmetic,
     Comparison,
     Equality,
-    Logic
+    Logic,
+    Undefined
 };
 
 struct Symbol {
@@ -27,19 +28,21 @@ class SemanticAnalyzer {
     std::unordered_set<std::string> assignments;
     Diagnostics &diagnostics;
     std::vector<Scope> scopes;
-    void update(const std::string &name, const Symbol &symbol);
+    //void update(const std::string &name, const Symbol &symbol);
     void enterScope();
     void leaveScope();
-    void declare(const std::string &name, const Symbol &symbol);
+    bool declare(const std::string &name, const Symbol &symbol);
     const Symbol *lookup(const std::string &name) const;
+    Symbol *lookup(const std::string &name);
+    void processBlock(const Block &block);
     void processStatement(const Statement &statement);
     void processIfStatement(const IfStatement &statement);
     void processVariableDeclaration(const VariableDeclaration &declaration);
     void processAssignment(const Assignment &assignment);
     void processExit(const Exit &exitCall);
     TokenType getExpressionType(const Expression &expression);
-    static opGeneral getGeneralType(TokenType opType);
-    static void checkArithmetic(TokenType opType, const BinaryExpression &binary);
+    static OpGeneral getGeneralType(TokenType opType);
+    void checkArithmetic(TokenType opType, const BinaryExpression &binary);
 public:
     explicit SemanticAnalyzer(Program program, Diagnostics &diagnostics);
     Program analyze();
