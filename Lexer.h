@@ -16,7 +16,7 @@ class Lexer {
     Location TokenStart{1,1};
     Diagnostics &diagnostics;
 
-    inline static std::map <std::string, TokenType> keywords = {
+    inline static std::map <std::string, TokenType> tokenMap = {
         {"let", TokenType::Let},
         {"exit", TokenType::Exit},
         {"if", TokenType::If},
@@ -50,7 +50,7 @@ class Lexer {
     static TokenType getTokenType(const std::string &tokenVal);
     static TokenType processWord(const std::string &word);
     void tokenize();
-    void consume(char ch);
+    void updateLoc(char ch);
 
 public:
     explicit Lexer(std::ifstream &file, Diagnostics &diagnostics);
