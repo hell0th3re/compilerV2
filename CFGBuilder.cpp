@@ -119,6 +119,7 @@ void CFGBuilder::printGraph() {
     }
 }
 
+
 BasicBlock *CFGBuilder::findUnreachable() {
     std::unordered_set<int> allSuccessors;
     for (const auto &block : blocks) {
