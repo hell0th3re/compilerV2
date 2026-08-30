@@ -11,12 +11,11 @@ struct BasicBlock {
 };
 
 class CFGBuilder {
-    std::unordered_map<std::string, BasicBlock> labelToBlock;
+    std::unordered_map<std::string, int> labelToBlock;
     IRProgram ir;
     std::vector<BasicBlock> blocks;
     void makeBlocks();
     std::vector<int> findSuccessors(const BasicBlock &block);
-    int findIDByLabel(const std::string &label);
     void setSuccessors();
     //void printBlocks();
 public:

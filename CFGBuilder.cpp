@@ -12,23 +12,13 @@ static bool isTerminator(const IROp &operation) {
     }
 }
 
-int CFGBuilder::findIDByLabel(const std::string &label) {
-    for (const auto &block : blocks) {
-
-        for (const auto &instruction : block.instructions) {
-            if (instruction.op == IROp::Label && instruction.destination == label) {
-                return block.id;
-            }
-        }
-    }
-    exit(1);
-}
-
 void CFGBuilder::setSuccessors() {
     //Go over each instruction in each block, get the associated label, and fill the map.
     for (const auto &block : blocks) {
-        if (block.instructions[0].op == IROp::Label) {
-            labelToBlock.insert({block.instructions[0].destination, block});
+        for (const auto &instruction : block.instructions) {
+            if (instruction.op == IROp::Label) {
+                labelToBlock.insert({instruction.destination, block.id});
+            }
         }
     }
 
@@ -36,9 +26,6 @@ void CFGBuilder::setSuccessors() {
     for (auto &block : blocks) {
         block.successors = findSuccessors(block);
     }
-
-    //overwrite the last elements "successors" with an empty vector
-    blocks.back().successors = {};
 }
 
 std::vector<int> CFGBuilder::findSuccessors(const BasicBlock &block) {
@@ -46,21 +33,25 @@ std::vector<int> CFGBuilder::findSuccessors(const BasicBlock &block) {
 
     if (block.instructions.back().op == IROp::Jump) {
         //1 successor block
-        BasicBlock succBlock = labelToBlock.at(block.instructions.back().destination);
-        result.push_back(succBlock.id);
+        int succBlockId = labelToBlock.at(block.instructions.back().destination);
+        result.push_back(succBlockId);
     }
     else if (block.instructions.back().op == IROp::JumpIfFalse) {
         //2 successor blocks
-        BasicBlock succBlock = labelToBlock.at(block.instructions.back().destination); //optional label successor
+        int succBlockId = labelToBlock.at(block.instructions.back().destination); //optional label successor
         //next block default successor
-        result.push_back(succBlock.id);
-        result.push_back(block.id + 1);
+        result.push_back(succBlockId);
+        if (block.id + 1 < blocks.size()) {
+            result.push_back(block.id+1);
+        }
     }
     else if (block.instructions.back().op == IROp::Exit) {
         return result;
     }
     else {
-        result.push_back(block.id+1);
+        if (block.id + 1 < blocks.size()) {
+            result.push_back(block.id+1);
+        }
     }
 
     return result;
@@ -71,17 +62,16 @@ void CFGBuilder::makeBlocks() {
     vector <IRInstruction> collected;
 
     for (const auto &instruction : ir.instructions) {
-        BasicBlock bBlock;
-        bBlock.id = blockCount;
+
         if (!isTerminator(instruction.op) && instruction.op != IROp::Label) {
             //collect the instruction
             collected.push_back(instruction);
         }
         else if (instruction.op == IROp::Label) {
             if (!collected.empty()) {
-                for (const auto &instr : collected) {
-                    bBlock.instructions.push_back(instr); //push instructions to the block
-                }
+                BasicBlock bBlock;
+                bBlock.id = blockCount;
+                bBlock.instructions = std::move(collected);
                 blocks.push_back(bBlock); //push the block
                 blockCount++;
             }
@@ -91,9 +81,10 @@ void CFGBuilder::makeBlocks() {
         }
         else {
             //push the collected
+            BasicBlock bBlock;
+            bBlock.id = blockCount;
             for (const auto &instr : collected) {
                 bBlock.instructions.push_back(instr);
-                std::cout << "pushed non term instruction " << std::endl;
             }
 
             bBlock.instructions.push_back(instruction); //push the terminator
@@ -170,6 +161,7 @@ CFGBuilder::CFGBuilder(const IRProgram &ir){
 }
 
 std::vector<BasicBlock> CFGBuilder::build() {
+    blocks.clear();
     makeBlocks();
     setSuccessors();
     return blocks;

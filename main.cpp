@@ -74,7 +74,7 @@ class Compiler {
         irProg = generator.generateIR();
 
         CFGBuilder builder(irProg);
-        builder.build();
+        vector<BasicBlock> blocks = builder.build();
 
         CodeGenerator codeGen(std::move(irProg));
         code = codeGen.generate();
