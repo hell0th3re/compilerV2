@@ -8,7 +8,7 @@ _start:
 	
 	mov rax, 1
 	mov [rbp - 8], rax
-	mov rax, 0
+	mov rax, 2
 	mov [rbp - 16], rax
 	mov rax, [rbp - 8]
 	cmp rax, 2
@@ -24,8 +24,8 @@ _start:
 	mov rax, 0
 	mov [rbp - 40], rax
 	.L0:
-	mov rax, 0
-	mov [rbp - 16], rax
+	mov rax, 2
+	mov [rbp - 8], rax
 	.L1:
 	mov rsp, rbp
 	pop rbp

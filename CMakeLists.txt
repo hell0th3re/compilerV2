@@ -16,4 +16,6 @@ add_executable(compilerV2 main.cpp
         CodeGenerator.cpp
         CodeGenerator.h
         Diagnostics.cpp
-        Diagnostics.h)
+        Diagnostics.h
+        CFGBuilder.cpp
+        CFGBuilder.h)

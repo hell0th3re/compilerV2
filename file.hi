@@ -1,8 +1,11 @@
 let x: int;
-let y:char;
+let y:int;
 x = 1;
-y = 'a';
+y = 2;
 
 if (x > 2) {
     let x:char;
+}
+else {
+    x =2;
 }

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 #include "CodeGenerator.h"
 #include "Diagnostics.h"
@@ -7,7 +8,8 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "SemanticAnalyzer.h"
-#include <algorithm>
+#include "CFGBuilder.h"
+
 using namespace std;
 
 class Compiler {
@@ -70,6 +72,9 @@ class Compiler {
 
         IRGenerator generator(std::move(progChecked));
         irProg = generator.generateIR();
+
+        CFGBuilder builder(irProg);
+        builder.build();
 
         CodeGenerator codeGen(std::move(irProg));
         code = codeGen.generate();

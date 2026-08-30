@@ -1,5 +1,6 @@
 #include "IR.h"
 #include <iostream>
+#include <sstream>
 
 void IRGenerator::process() {
     for (const Statement &statement : parsedProg.statements) {
