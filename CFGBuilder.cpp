@@ -19,33 +19,45 @@ void CFGBuilder::makeBlocks() {
     for (const auto &instruction : ir.instructions) {
         BasicBlock bBlock;
         bBlock.id = blockCount;
-        if (!isTerminator(instruction.op)) {
-            std::cout << "collected non term instruction " << std::endl;
+        if (!isTerminator(instruction.op) && instruction.op != IROp::Label) {
+            //collect the instruction
             collected.push_back(instruction);
         }
+        else if (instruction.op == IROp::Label) {
+            if (!collected.empty()) {
+                for (const auto &instr : collected) {
+                    bBlock.instructions.push_back(instr); //push instructions to the block
+                }
+                blocks.push_back(bBlock); //push the block
+                blockCount++;
+            }
+
+            collected.clear();
+            collected.push_back(instruction); //sneak the label in as the first instruction
+        }
         else {
-            std::cout << "found terminator" << std::endl;
-            //push the collecetd
+            //push the collected
             for (const auto &instr : collected) {
                 bBlock.instructions.push_back(instr);
                 std::cout << "pushed non term instruction " << std::endl;
             }
+
             bBlock.instructions.push_back(instruction); //push the terminator
-            std::cout << "pushing the block" << std::endl;
-            blocks.push_back(bBlock);
+            blocks.push_back(bBlock); //push the block
             blockCount++;
             collected.clear();
         }
     }
 
-    std::cout << "no more instructions, creating a new block, pushing collected ones" << std::endl;
-    BasicBlock endBlock;
-    endBlock.id = blockCount;
-    for (const auto &instruction : collected) {
-        endBlock.instructions.push_back(instruction);
+    //process the collected unpushed instructions
+    if (!collected.empty()) {
+        BasicBlock endBlock;
+        endBlock.id = blockCount;
+        for (const auto &instruction : collected) {
+            endBlock.instructions.push_back(instruction);
+        }
+        blocks.push_back(endBlock);
     }
-    blocks.push_back(endBlock);
-    std::cout << "Pushed";
 }
 
 // void CFGBuilder::makeBlocks() {
