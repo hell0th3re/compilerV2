@@ -1,6 +1,10 @@
 #include <iostream>
 #include "CFGBuilder.h"
 
+#include <unordered_set>
+
+using std::cout;
+
 static bool isTerminator(const IROp &operation) {
     switch (operation) {
         case IROp::JumpIfFalse:
@@ -105,55 +109,30 @@ void CFGBuilder::makeBlocks() {
     }
 }
 
-// void CFGBuilder::printBlocks() {
-//     for (const auto &block : blocks) {
-//         std::cout << "B" << block.id << ": \n";
-//         for (const auto &instruction : block.instructions) {
-//             std::cout << "\t";
-//             if (instruction.op == IROp::Label) {
-//                 std::cout << "Label " << instruction.destination << " ";
-//             }
-//             else if (instruction.op == IROp::JumpIfFalse) {
-//                 std::cout << "JumpIfFalse " << irValueToString(instruction.left) << ", " << instruction.destination << " ";
-//             }
-//             else if (instruction.op == IROp::Jump) {
-//                 std::cout << "Jump " << instruction.destination << " ";
-//             }
-//             else {
-//                 std::cout << instruction.destination;
-//             }
-//
-//             if (instruction.op == IROp::Move || instruction.op == IROp::Exit) {
-//                 std::cout << " <- ";
-//             }
-//             else if (instruction.op == IROp::JumpIfFalse || instruction.op == IROp::Label || instruction.op == IROp::Jump) {
-//                 std::cout << std::endl;
-//                 continue;
-//             }
-//             else {
-//                 std::cout << " = ";
-//             }
-//
-//             if (instruction.op == IROp::Not) {
-//                 std::cout << opToString(instruction.op);
-//                 std::cout << irValueToString(instruction.left) << " ";
-//                 std::cout << std::endl;
-//                 continue;
-//             }
-//
-//             std::cout << irValueToString(instruction.left) << " ";
-//
-//             if (instruction.op != IROp::Move && instruction.op != IROp::Exit) {
-//                 std::cout << opToString(instruction.op) << " ";
-//                 if (!instruction.right.has_value()) {
-//                     std::cerr << "Instruction.right is empty (debug error)" << std::endl;
-//                 }
-//                 std::cout << irValueToString(instruction.right.value()) << " ";
-//             }
-//             std::cout << std::endl;
-//         }
-//     }
-// }
+void CFGBuilder::printGraph() {
+    cout << "\n";
+    for (const auto &block : blocks) {
+        cout << "B" + std::to_string(block.id) << ": \n";
+        for (int successor : block.successors) {
+            cout << "   | B" + std::to_string(successor) << "\n";
+        }
+    }
+}
+
+BasicBlock *CFGBuilder::findUnreachable() {
+    std::unordered_set<int> allSuccessors;
+    for (const auto &block : blocks) {
+        for (const auto &successor : block.successors) {
+            allSuccessors.insert(successor);
+        }
+    }
+    for (BasicBlock &block : blocks) {
+        if(!allSuccessors.contains(block.id) && block.id != 0) {
+            return &block; //returns the memory address
+        }
+    }
+    return nullptr;
+}
 
 //public
 CFGBuilder::CFGBuilder(const IRProgram &ir){
@@ -164,5 +143,12 @@ std::vector<BasicBlock> CFGBuilder::build() {
     blocks.clear();
     makeBlocks();
     setSuccessors();
+    printGraph();
+
+    if (findUnreachable() != nullptr) {
+        int unreachId = findUnreachable()->id;
+        cout << "Block B" << unreachId << " is unreachable \n";
+    }
+
     return blocks;
 }

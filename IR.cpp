@@ -308,7 +308,6 @@ void IRGenerator::printIRCode() {
     }
 }
 
-
 //public
 IRGenerator::IRGenerator(Program parsedProg) {
     irProg.instructions.clear();

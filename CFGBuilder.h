@@ -17,6 +17,8 @@ class CFGBuilder {
     void makeBlocks();
     std::vector<int> findSuccessors(const BasicBlock &block);
     void setSuccessors();
+    void printGraph();
+    BasicBlock *findUnreachable();
     //void printBlocks();
 public:
     explicit CFGBuilder(const IRProgram &ir);
