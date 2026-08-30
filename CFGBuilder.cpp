@@ -12,6 +12,60 @@ static bool isTerminator(const IROp &operation) {
     }
 }
 
+int CFGBuilder::findIDByLabel(const std::string &label) {
+    for (const auto &block : blocks) {
+
+        for (const auto &instruction : block.instructions) {
+            if (instruction.op == IROp::Label && instruction.destination == label) {
+                return block.id;
+            }
+        }
+    }
+    exit(1);
+}
+
+void CFGBuilder::setSuccessors() {
+    //Go over each instruction in each block, get the associated label, and fill the map.
+    for (const auto &block : blocks) {
+        if (block.instructions[0].op == IROp::Label) {
+            labelToBlock.insert({block.instructions[0].destination, block});
+        }
+    }
+
+    //Get the values from the map and set the successor field in the blocks
+    for (auto &block : blocks) {
+        block.successors = findSuccessors(block);
+    }
+
+    //overwrite the last elements "successors" with an empty vector
+    blocks.back().successors = {};
+}
+
+std::vector<int> CFGBuilder::findSuccessors(const BasicBlock &block) {
+    std::vector<int> result;
+
+    if (block.instructions.back().op == IROp::Jump) {
+        //1 successor block
+        BasicBlock succBlock = labelToBlock.at(block.instructions.back().destination);
+        result.push_back(succBlock.id);
+    }
+    else if (block.instructions.back().op == IROp::JumpIfFalse) {
+        //2 successor blocks
+        BasicBlock succBlock = labelToBlock.at(block.instructions.back().destination); //optional label successor
+        //next block default successor
+        result.push_back(succBlock.id);
+        result.push_back(block.id + 1);
+    }
+    else if (block.instructions.back().op == IROp::Exit) {
+        return result;
+    }
+    else {
+        result.push_back(block.id+1);
+    }
+
+    return result;
+}
+
 void CFGBuilder::makeBlocks() {
     int blockCount = 0;
     vector <IRInstruction> collected;
@@ -59,57 +113,6 @@ void CFGBuilder::makeBlocks() {
         blocks.push_back(endBlock);
     }
 }
-
-// void CFGBuilder::makeBlocks() {
-//     int blockCount = 0;
-//     std::vector<IRInstruction>instrBuffer;
-//     for (const auto &instruction : ir.instructions) {
-//
-//         if (isTerminator(instruction.op)) {
-//             BasicBlock bBlock;
-//             bBlock.id = blockCount;
-//             for (const auto &instr : instrBuffer) {
-//                 bBlock.instructions.push_back(instr);
-//             }
-//             bBlock.instructions.push_back(instruction); //add the terminator to the end of the block
-//
-//             blocks.push_back(bBlock);
-//             blockCount++;
-//             instrBuffer.clear();
-//         }
-//         else if (instruction.op == IROp::Label) {
-//             //push back the buffer before the label
-//             if (instrBuffer.empty()) {
-//                 continue;
-//             }
-//             std::cout << "frgthyjui ";
-//             BasicBlock bBlock;
-//             bBlock.id = blockCount;
-//             for (const auto &instr : instrBuffer) {
-//                 bBlock.instructions.push_back(instr);
-//             }
-//
-//             //push the block
-//             blocks.push_back(bBlock);
-//             blockCount++;
-//             instrBuffer.clear();
-//
-//             instrBuffer.push_back(instruction);
-//         }
-//         else {
-//             instrBuffer.push_back(instruction);
-//         }
-//     }
-//     if (!instrBuffer.empty()) {
-//         BasicBlock bBlock;
-//         bBlock.id = blockCount;
-//         for (const auto &instr : instrBuffer) {
-//             bBlock.instructions.push_back(instr);
-//         }
-//         blocks.push_back(bBlock);
-//         instrBuffer.clear();
-//     }
-// }
 
 // void CFGBuilder::printBlocks() {
 //     for (const auto &block : blocks) {
@@ -168,5 +171,6 @@ CFGBuilder::CFGBuilder(const IRProgram &ir){
 
 std::vector<BasicBlock> CFGBuilder::build() {
     makeBlocks();
+    setSuccessors();
     return blocks;
 }
