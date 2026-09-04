@@ -71,7 +71,7 @@ class IRGenerator {
     int labelCounter;
     Program parsedProg;
     IRProgram irProg;
-    bool exitProg = false;
+    //bool exitProg = false;
     void process();
     IRValue generateExpression(const Expression &expr);
     void generateStatement(const Statement &statement);

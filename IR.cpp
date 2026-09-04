@@ -4,7 +4,7 @@
 
 void IRGenerator::process() {
     for (const Statement &statement : parsedProg.statements) {
-        if (exitProg) return;
+        //if (exitProg) return;
         generateStatement(statement);
     }
 }
@@ -17,7 +17,7 @@ void IRGenerator::generateStatement(const Statement &statement) {
         else if (std::holds_alternative<Exit>(statement.value)) {
             const Exit &exitCall = std::get<Exit>(statement.value);
             generateExit(exitCall);
-            exitProg = true;
+            //exitProg = true;
             return;
         }
         else if (std::holds_alternative<IfStatement>(statement.value)) {

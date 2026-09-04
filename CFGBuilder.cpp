@@ -1,8 +1,6 @@
 #include <iostream>
 #include "CFGBuilder.h"
 
-#include <unordered_set>
-
 using std::cout;
 
 static bool isTerminator(const IROp &operation) {
@@ -87,9 +85,7 @@ void CFGBuilder::makeBlocks() {
             //push the collected
             BasicBlock bBlock;
             bBlock.id = blockCount;
-            for (const auto &instr : collected) {
-                bBlock.instructions.push_back(instr);
-            }
+            bBlock.instructions = std::move(collected);
 
             bBlock.instructions.push_back(instruction); //push the terminator
             blocks.push_back(bBlock); //push the block
@@ -102,9 +98,8 @@ void CFGBuilder::makeBlocks() {
     if (!collected.empty()) {
         BasicBlock endBlock;
         endBlock.id = blockCount;
-        for (const auto &instruction : collected) {
-            endBlock.instructions.push_back(instruction);
-        }
+        endBlock.instructions = std::move(collected);
+
         blocks.push_back(endBlock);
     }
 }
@@ -119,20 +114,28 @@ void CFGBuilder::printGraph() {
     }
 }
 
-
-BasicBlock *CFGBuilder::findUnreachable() {
-    std::unordered_set<int> allSuccessors;
+std::vector<int> CFGBuilder::findUnreachable() const {
+    std::vector<int> unreachable;
     for (const auto &block : blocks) {
-        for (const auto &successor : block.successors) {
-            allSuccessors.insert(successor);
+        if (!visited.contains(block.id)) {
+            unreachable.push_back(block.id);
         }
     }
-    for (BasicBlock &block : blocks) {
-        if(!allSuccessors.contains(block.id) && block.id != 0) {
-            return &block; //returns the memory address
-        }
+    return unreachable;
+}
+
+
+void CFGBuilder::visit(const int blockId) {
+    if (visited.contains(blockId)) {
+        return;
     }
-    return nullptr;
+
+    visited.insert(blockId);
+    BasicBlock &block = blocks.at(blockId);
+
+    for (const auto &successor : block.successors) {
+        visit(successor);
+    }
 }
 
 //public
@@ -142,14 +145,22 @@ CFGBuilder::CFGBuilder(const IRProgram &ir){
 
 std::vector<BasicBlock> CFGBuilder::build() {
     blocks.clear();
+    visited.clear();
     makeBlocks();
     setSuccessors();
     printGraph();
 
-    if (findUnreachable() != nullptr) {
-        int unreachId = findUnreachable()->id;
-        cout << "Block B" << unreachId << " is unreachable \n";
+    cout << "\n";
+
+    if (!blocks.empty()) {
+        visit(blocks.at(0).id);
     }
+    vector<int> unreachable = findUnreachable();
+    cout << "Unreachable: ";
+    for (int i : unreachable) {
+        cout << i << " ";
+    }
+    cout << "\n";
 
     return blocks;
 }
