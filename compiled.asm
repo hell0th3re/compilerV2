@@ -4,7 +4,7 @@ section .text
 _start:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 96
+	sub rsp, 88
 	
 	mov rax, 1
 	mov [rbp - 8], rax
@@ -31,8 +31,8 @@ _start:
 	mov rax, 2
 	mov [rbp - 16], rax
 	.L1:
-	
-	mov rdi, 1
+	mov rax, 3
+	mov [rbp - 8], rax
 	mov rsp, rbp
 	pop rbp
 	mov rax, 60

@@ -9,6 +9,7 @@ struct BasicBlock {
     int id;
     std::vector<IRInstruction> instructions;
     std::vector<int> successors;
+    std::vector<int> predecessors;
 };
 
 class CFGBuilder {
@@ -20,10 +21,8 @@ class CFGBuilder {
     std::vector<int> findSuccessors(const BasicBlock &block);
     void setSuccessors();
     void printGraph();
-    //BasicBlock *findUnreachable();
     void visit(int blockId);
     std::vector<int> findUnreachable() const;
-    //void printBlocks();
 public:
     explicit CFGBuilder(const IRProgram &ir);
     std::vector<BasicBlock> build();

@@ -27,6 +27,10 @@ void CFGBuilder::setSuccessors() {
     //Get the values from the map and set the successor field in the blocks
     for (auto &block : blocks) {
         block.successors = findSuccessors(block);
+
+        for (const auto &successor : block.successors) {
+            blocks.at(successor).predecessors.push_back(block.id);
+        }
     }
 }
 
@@ -156,11 +160,13 @@ std::vector<BasicBlock> CFGBuilder::build() {
         visit(blocks.at(0).id);
     }
     vector<int> unreachable = findUnreachable();
-    cout << "Unreachable: ";
-    for (int i : unreachable) {
-        cout << i << " ";
+    if (!unreachable.empty()) {
+        cout << "WARNING: Unreachable Code" << '\n';
+        // for (int i : unreachable) {
+        //     cout << i << " ";
+        // }
+        //cout << "\n";
     }
-    cout << "\n";
 
     return blocks;
 }
