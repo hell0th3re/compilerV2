@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 #include "IR.h"
 
 struct BasicBlock {
@@ -13,6 +14,14 @@ struct BasicBlock {
 };
 
 class CFGBuilder {
+    std::vector<std::string> uninitialised;
+    void analyze();
+    std::map<int, std::set<std::string>> in;
+    std::map<int, std::set<std::string>> out;
+    void checkRead(const IRValue &value, const std::set<std::string> &state);
+    std::set<std::string> getIncomingState(const BasicBlock &block);
+    std::set<std::string> intersect(const std::set<std::string> &a, const std::set<std::string> &b);
+    std::set<std::string> transfer(const BasicBlock &block, std::set<std::string> state);
     std::unordered_set<int> visited;
     std::unordered_map<std::string, int> labelToBlock;
     IRProgram ir;

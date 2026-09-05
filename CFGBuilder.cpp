@@ -1,4 +1,6 @@
 #include <iostream>
+#include <algorithm>
+#include <map>
 #include "CFGBuilder.h"
 
 using std::cout;
@@ -128,6 +130,126 @@ std::vector<int> CFGBuilder::findUnreachable() const {
     return unreachable;
 }
 
+using InitSet = std::set<std::string>;
+
+InitSet CFGBuilder::intersect(const InitSet &a, const InitSet &b) {
+    InitSet result;
+
+    std::set_intersection(
+        a.begin(), a.end(),
+        b.begin(), b.end(),
+        std::inserter(result, result.begin())
+    );
+
+    return result;
+}
+
+
+InitSet CFGBuilder::getIncomingState(const BasicBlock &block) {
+    // Entry block.
+    if (block.id == 0) {
+        return {};
+    }
+
+    if (block.predecessors.empty()) {
+        return {};
+    }
+
+    // Start with the state from the first predecessor.
+    InitSet result = out.at(block.predecessors.at(0));
+
+    // A variable is definitely initialized only if it is
+    // initialized on all incoming paths.
+    for (size_t i = 1; i < block.predecessors.size(); i++) {
+        result = intersect(result, out.at(block.predecessors.at(i)));
+    }
+
+    return result;
+}
+
+void CFGBuilder::checkRead(const IRValue &value, const InitSet &state) {
+    if (std::holds_alternative<std::string>(value.value)) {
+        const auto &name = std::get<std::string>(value.value);
+
+        if (!state.contains(name)) {
+            uninitialised.push_back(name);
+        }
+    }
+}
+
+InitSet CFGBuilder::transfer(const BasicBlock &block, InitSet state) {
+    for (const auto &instruction : block.instructions) {
+        switch (instruction.op) {
+            case IROp::Move:
+                checkRead(instruction.left, state);
+                state.insert(instruction.destination);
+                break;
+
+            case IROp::Add:
+            case IROp::Subtract:
+            case IROp::Multiply:
+            case IROp::Divide:
+            case IROp::CompareEqual:
+            case IROp::CompareNotEqual:
+            case IROp::CompareLess:
+            case IROp::CompareGreater:
+            case IROp::And:
+            case IROp::Or:
+                checkRead(instruction.left, state);
+                if (instruction.right.has_value()) {
+                    checkRead(*instruction.right, state);
+                }
+                state.insert(instruction.destination);
+                break;
+
+            case IROp::Not:
+                checkRead(instruction.left, state);
+                state.insert(instruction.destination);
+                break;
+
+            case IROp::JumpIfFalse:
+                checkRead(instruction.left, state);
+                break;
+
+            case IROp::Jump:
+            case IROp::Label:
+                break;
+            case IROp::Exit:
+                checkRead(instruction.left, state);
+                break;
+        }
+    }
+
+    return state;
+}
+
+void CFGBuilder::analyze() {
+    for (const auto& block : blocks) {
+        in.insert({block.id, InitSet{}}); //maybe emplace? not sure
+        out.insert({block.id, InitSet{}});
+    }
+
+    bool changed = true;
+
+    while (changed) {
+        changed = false;
+
+        for (const auto &block : blocks) {
+
+            InitSet newIn = getIncomingState(block);
+            InitSet newOut = transfer(block, newIn);
+
+            if (newIn != in.at(block.id) ||
+                newOut != out.at(block.id)) {
+
+                in.at(block.id) = std::move(newIn);
+                out.at(block.id) = std::move(newOut);
+
+                changed = true;
+            }
+        }
+    }
+}
 
 void CFGBuilder::visit(const int blockId) {
     if (visited.contains(blockId)) {
@@ -150,8 +272,12 @@ CFGBuilder::CFGBuilder(const IRProgram &ir){
 std::vector<BasicBlock> CFGBuilder::build() {
     blocks.clear();
     visited.clear();
+    in.clear();
+    out.clear();
+    uninitialised.clear();
     makeBlocks();
     setSuccessors();
+
     printGraph();
 
     cout << "\n";
@@ -159,13 +285,22 @@ std::vector<BasicBlock> CFGBuilder::build() {
     if (!blocks.empty()) {
         visit(blocks.at(0).id);
     }
+
+    analyze();
     vector<int> unreachable = findUnreachable();
+
     if (!unreachable.empty()) {
         cout << "WARNING: Unreachable Code" << '\n';
-        // for (int i : unreachable) {
-        //     cout << i << " ";
-        // }
-        //cout << "\n";
+    }
+
+    sort(uninitialised.begin(), uninitialised.end());
+    auto it = std::unique(uninitialised.begin(), uninitialised.end());
+    uninitialised.erase(it, uninitialised.end());
+
+    if (!uninitialised.empty()) {
+        for (auto &var : uninitialised) {
+            cout << "WARNING: Variable: " << var << " might not be initialised\n";
+        }
     }
 
     return blocks;
