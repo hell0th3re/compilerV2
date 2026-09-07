@@ -207,7 +207,6 @@ void Lexer::tokenize() {
                 string op = "||";
                 token.value = op;
                 token.type = getTokenType(op);
-                //token.location = TokenStart;
                 tokens.push_back(token);
                 updateLoc(ch);
                 file.get();

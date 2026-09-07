@@ -23,6 +23,8 @@ bool Parser::isAtEnd() const {
 bool Parser::isStatementBoundary(TokenType type) const {
     bool boundaryCheck = (
              peek().type == TokenType::Let ||
+             peek().type == TokenType::IntType ||
+             peek().type == TokenType::CharType ||
              peek().type == TokenType::Identifier ||
              peek().type == TokenType::Exit ||
              peek().type == TokenType::If ||
@@ -58,9 +60,16 @@ void Parser::synchronise() {
     }
 }
 
+static bool isVarType(TokenType type) {
+    if (type == TokenType::IntType || type == TokenType::CharType) {
+        return true;
+    }
+    return false;
+}
+
 Statement Parser::parseStatement() {
     Statement statement;
-    if (peek().type == TokenType::Let) {
+    if (isVarType(peek().type)) {
         statement = parseDeclaration();
     }
     else if (peek().type == TokenType::Identifier) {
@@ -171,7 +180,10 @@ Statement Parser::parseExit() {
 Statement Parser::parseDeclaration() {
     Statement statement;
     VariableDeclaration var;
-    consume(TokenType::Let);
+
+    var.type = parseType();
+
+    //consume(peek().type); - done in parseType
     if (check(TokenType::Identifier)) {
         var.name = peek().value;
     }
@@ -181,11 +193,6 @@ Statement Parser::parseDeclaration() {
     if (!consume(TokenType::Identifier)) {
         synchronise();
     }
-    if (!consume(TokenType::Colon)) {
-        synchronise();
-    }
-
-    var.type = parseType();
 
     if (!consume(TokenType::Semicolon)) {
         synchronise();

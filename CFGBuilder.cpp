@@ -275,6 +275,7 @@ std::vector<BasicBlock> CFGBuilder::build() {
     in.clear();
     out.clear();
     uninitialised.clear();
+    labelToBlock.clear();
     makeBlocks();
     setSuccessors();
 
