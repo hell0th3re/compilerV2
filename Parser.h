@@ -60,6 +60,12 @@ struct IfStatement {
     Location location;
 };
 
+struct WhileLoop {
+    Expression condition;
+    std::unique_ptr<Block> whileBlock;
+    Location location;
+};
+
 struct ErrorStatement {
     Location location;
 };
@@ -70,6 +76,7 @@ struct Statement {
         Assignment,
         Exit,
         IfStatement,
+        WhileLoop,
         ErrorStatement
     > value;
 };
@@ -98,6 +105,7 @@ class Parser {
     Statement parseStatement();
     void synchronise();
     Statement parseIfStatement();
+    Statement parseWhileLoop();
     Statement parseExit();
     Statement parseDeclaration();
     Statement parseAssignment();

@@ -34,6 +34,11 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
             const IfStatement &ifStatement = std::get<IfStatement>(statement.value);
             processIfStatement(ifStatement);
         }
+
+        else if (holds_alternative<WhileLoop>(statement.value)) {
+            const WhileLoop &whileLoop = std::get<WhileLoop>(statement.value);
+            processWhileLoop(whileLoop);
+        }
 }
 
 void SemanticAnalyzer::processExit(const Exit &exitCall) {
@@ -160,6 +165,19 @@ void SemanticAnalyzer::processIfStatement(const IfStatement &statement) {
         processBlock(*statement.elseBlock);
     }
 
+}
+
+void SemanticAnalyzer::processWhileLoop(const WhileLoop &whileLoop) {
+    TokenType conditionType = getExpressionType(whileLoop.condition);
+
+    if (conditionType != TokenType::BoolType && conditionType != TokenType::Undefined) {
+        diagnostics.error(
+            "Condition must be of bool type",
+            whileLoop.condition.location
+        );
+    }
+
+    processBlock(*whileLoop.whileBlock);
 }
 
 TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {

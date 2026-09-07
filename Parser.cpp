@@ -83,6 +83,9 @@ Statement Parser::parseStatement() {
     else if (peek().type == TokenType::If) {
         statement = parseIfStatement();
     }
+    else if (peek().type == TokenType::While) {
+        statement = parseWhileLoop();
+    }
     else {
         ErrorStatement error{};
         error.location = peek().location;
@@ -95,6 +98,41 @@ Statement Parser::parseStatement() {
         statement.value = error;
         synchronise();
     }
+    return statement;
+}
+
+Statement Parser::parseWhileLoop() {
+    Statement statement;
+    Block block;
+    WhileLoop whileLoop;
+
+    whileLoop.location = peek().location;
+    consume(TokenType::While);
+
+    if (!consume(TokenType::OpenParen)) {
+        synchronise();
+    }
+
+    Expression condition = parseLogicOr();
+
+    if (!consume(TokenType::CloseParen)) {
+        synchronise();
+    }
+
+    block.location = peek().location;
+    if (!consume(TokenType::OpenBraces)) {
+        synchronise();
+    }
+
+    while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
+        block.statements.push_back(parseStatement());
+    }
+    consume(TokenType::CloseBraces);
+
+    whileLoop.condition = std::move(condition);
+    whileLoop.whileBlock = std::make_unique<Block>(std::move(block));
+    statement.value = std::move(whileLoop);
+
     return statement;
 }
 

@@ -77,6 +77,7 @@ class IRGenerator {
     void generateStatement(const Statement &statement);
     void generateAssignment(const Assignment &assignment);
     void generateIf(const IfStatement &ifStatement);
+    void generateWhile(const WhileLoop &whileLoop);
     void generateExit(const Exit &exitCall);
     std::string newTemporary();
     std::string newLabel();

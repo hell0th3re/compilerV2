@@ -1,12 +1,6 @@
-int x = 2;
-int y = 1;
-int z;
-
-if(x > 1){
-    z = 1;
-}
-else{
-    z = 2+x*y;
+int a = 1;
+while(a<5){
+    a = a + 1;
 }
 
-exit z;
+exit a;

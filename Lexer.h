@@ -21,6 +21,7 @@ class Lexer {
         {"exit", TokenType::Exit},
         {"if", TokenType::If},
         {"else", TokenType::Else},
+        {"while", TokenType::While},
         {"=", TokenType::Assign},
         {"+", TokenType::Add},
         {"-", TokenType::Subtract},

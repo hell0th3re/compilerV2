@@ -36,6 +36,10 @@ void IRGenerator::generateStatement(const Statement &statement) {
             const IfStatement &ifStatement = std::get<IfStatement>(statement.value);
             generateIf(ifStatement);
         }
+        else if (std::holds_alternative<WhileLoop>(statement.value)) {
+            const WhileLoop &whileLoop = std::get<WhileLoop>(statement.value);
+            generateWhile(whileLoop);
+        }
 }
 
 void IRGenerator::generateAssignment(const Assignment &assignment) {
@@ -65,26 +69,25 @@ void IRGenerator::generateIf(const IfStatement &ifStatement) {
         ifInstruction.destination = elseLabel.destination;
         ifInstruction.left = generateExpression(ifStatement.condition);
 
-        irProg.instructions.push_back(std::move(ifInstruction));
+        irProg.instructions.push_back(ifInstruction);
 
         for (auto &statement : ifStatement.thenBlock->statements) {
             generateStatement(statement);
-
         }
 
         IRInstruction jumpInstruction;
         jumpInstruction.op = IROp::Jump;
         jumpInstruction.destination = endLabel.destination;
 
-        irProg.instructions.push_back(std::move(jumpInstruction));
+        irProg.instructions.push_back(jumpInstruction);
 
-        irProg.instructions.push_back(std::move(elseLabel));
+        irProg.instructions.push_back(elseLabel);
 
         for (auto &statement : ifStatement.elseBlock->statements) {
             generateStatement(statement);
         }
 
-        irProg.instructions.push_back(std::move(endLabel));
+        irProg.instructions.push_back(endLabel);
     }
     else {
         IRInstruction endLabel;
@@ -95,15 +98,52 @@ void IRGenerator::generateIf(const IfStatement &ifStatement) {
         ifInstruction.destination = endLabel.destination;
         ifInstruction.left = generateExpression(ifStatement.condition);
 
-        irProg.instructions.push_back(std::move(ifInstruction));
+        irProg.instructions.push_back(ifInstruction);
 
         for (auto &statement : ifStatement.thenBlock->statements) {
             generateStatement(statement);
         }
 
-        irProg.instructions.push_back(std::move(endLabel));
+        irProg.instructions.push_back(endLabel);
     }
 
+}
+
+void IRGenerator::generateWhile(const WhileLoop &whileLoop) {
+    //place a label
+    //check the condition, if true continue, if not jump to a end label
+    //do stuff
+    //jump back to the start label
+
+    IRInstruction entryLabel;
+    entryLabel.op = IROp::Label;
+    entryLabel.destination = newLabel();
+
+    IRInstruction exitLabel;
+    exitLabel.op = IROp::Label;
+    exitLabel.destination = newLabel();
+
+    irProg.instructions.push_back(entryLabel);
+
+    //condition check after the label so it updates after every iteration
+    IRInstruction conditionCheck;
+    conditionCheck.op = IROp::JumpIfFalse;
+    conditionCheck.left = generateExpression(whileLoop.condition);
+    conditionCheck.destination = exitLabel.destination;
+
+    irProg.instructions.push_back(conditionCheck);
+
+    // stuff
+    for (auto &statement : whileLoop.whileBlock->statements) {
+        generateStatement(statement);
+    }
+
+    IRInstruction jumpBack;
+    jumpBack.op = IROp::Jump;
+    jumpBack.destination = entryLabel.destination;
+
+    irProg.instructions.push_back(jumpBack);
+    irProg.instructions.push_back(exitLabel);
 }
 
 void IRGenerator::generateExit(const Exit &exitCall) {

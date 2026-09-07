@@ -12,6 +12,7 @@ enum class TokenType {
     BoolType,
     If,
     Else,
+    While,
 
     //Literials
     Integer,
