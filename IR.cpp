@@ -11,20 +11,26 @@ void IRGenerator::process() {
 
 void IRGenerator::generateStatement(const Statement &statement) {
         if (std::holds_alternative<VariableDeclaration>(statement.value)) {
+
             const VariableDeclaration &variableDeclaration = std::get<VariableDeclaration>(statement.value);
-            // if (variableDeclaration.initializer.has_value()) {
-            //     //here
-            // }
+
+            if (variableDeclaration.initializer != nullptr) {
+                IRValue initValue = generateExpression(*variableDeclaration.initializer);
+                IRInstruction initialiseInstruction;
+                initialiseInstruction.op = IROp::Move;
+                initialiseInstruction.left = initValue;
+                initialiseInstruction.destination = variableDeclaration.name;
+
+                irProg.instructions.push_back(std::move(initialiseInstruction));
+            }
         }
-        if (holds_alternative<Assignment>(statement.value)) {
+        else if (holds_alternative<Assignment>(statement.value)) {
             const Assignment &assignment = std::get<Assignment>(statement.value);
             generateAssignment(assignment);
         }
         else if (std::holds_alternative<Exit>(statement.value)) {
             const Exit &exitCall = std::get<Exit>(statement.value);
             generateExit(exitCall);
-            //exitProg = true;
-            return;
         }
         else if (std::holds_alternative<IfStatement>(statement.value)) {
             const IfStatement &ifStatement = std::get<IfStatement>(statement.value);

@@ -1,2 +1,12 @@
-int x;
-exit x;
+int x = 2;
+int y = 1;
+int z;
+
+if(x > 1){
+    z = 1;
+}
+else{
+    z = 2+x*y;
+}
+
+exit z;
