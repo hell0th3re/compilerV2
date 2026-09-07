@@ -36,7 +36,7 @@ struct Expression {
 struct VariableDeclaration {
     std::string name;
     TokenType type;
-    std::optional<Expression> initializer;
+    std::unique_ptr<Expression> initializer;
     Location location;
 };
 

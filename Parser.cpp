@@ -198,8 +198,8 @@ Statement Parser::parseDeclaration() {
 
     if (check(TokenType::Assign)) {
         consume(TokenType::Assign);
-        Expression e = parseLogicOr();
-        var.initializer = std::move(e);
+        std::unique_ptr<Expression>ex = std::make_unique<Expression>(parseLogicOr());
+        var.initializer = std::move(ex);
     }
 
     if (!consume(TokenType::Semicolon)) {

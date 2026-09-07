@@ -85,7 +85,7 @@ void SemanticAnalyzer::processVariableDeclaration(const VariableDeclaration &dec
         return;
     }
     declarationSym.type = declaration.type;
-    if (declaration.initializer.has_value()) {
+    if (declaration.initializer != nullptr) {
         declarationSym.initialised = true;
     }
     else {
