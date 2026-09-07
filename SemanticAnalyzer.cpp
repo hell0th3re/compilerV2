@@ -85,7 +85,13 @@ void SemanticAnalyzer::processVariableDeclaration(const VariableDeclaration &dec
         return;
     }
     declarationSym.type = declaration.type;
-    declarationSym.initialised = false;
+    if (declaration.initializer.has_value()) {
+        declarationSym.initialised = true;
+    }
+    else {
+        declarationSym.initialised = false;
+    }
+
     bool isDeclared = declare(declaration.name, declarationSym);
     if (!isDeclared) {
         diagnostics.error(

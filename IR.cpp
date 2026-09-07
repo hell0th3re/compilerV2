@@ -10,6 +10,12 @@ void IRGenerator::process() {
 }
 
 void IRGenerator::generateStatement(const Statement &statement) {
+        if (std::holds_alternative<VariableDeclaration>(statement.value)) {
+            const VariableDeclaration &variableDeclaration = std::get<VariableDeclaration>(statement.value);
+            if (variableDeclaration.initializer.has_value()) {
+                //here
+            }
+        }
         if (holds_alternative<Assignment>(statement.value)) {
             const Assignment &assignment = std::get<Assignment>(statement.value);
             generateAssignment(assignment);

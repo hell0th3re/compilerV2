@@ -1,16 +1,12 @@
 #ifndef COMPILERV2_PARSER_H
 #define COMPILERV2_PARSER_H
 #include <memory>
+#include <optional>
 #include <variant>
 #include <vector>
 #include "Token.h"
 #include "Diagnostics.h"
 
-struct VariableDeclaration {
-    std::string name;
-    TokenType type;
-    Location location;
-};
 
 struct Expression;
 
@@ -34,6 +30,13 @@ struct Expression {
     std::unique_ptr<BinaryExpression>,
     std::unique_ptr<UnaryExpression>,
     ErrorExpression> value;
+    Location location;
+};
+
+struct VariableDeclaration {
+    std::string name;
+    TokenType type;
+    std::optional<Expression> initializer;
     Location location;
 };
 

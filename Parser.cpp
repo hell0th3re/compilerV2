@@ -61,7 +61,9 @@ void Parser::synchronise() {
 }
 
 static bool isVarType(TokenType type) {
-    if (type == TokenType::IntType || type == TokenType::CharType) {
+    if (type == TokenType::IntType ||
+        type == TokenType::CharType ||
+        type == TokenType::BoolType) {
         return true;
     }
     return false;
@@ -194,11 +196,17 @@ Statement Parser::parseDeclaration() {
         synchronise();
     }
 
+    if (check(TokenType::Assign)) {
+        consume(TokenType::Assign);
+        Expression e = parseLogicOr();
+        var.initializer = std::move(e);
+    }
+
     if (!consume(TokenType::Semicolon)) {
         synchronise();
     }
 
-    statement.value = var;
+    statement.value = std::move(var);
     return statement;
 }
 
