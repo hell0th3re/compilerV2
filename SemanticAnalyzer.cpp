@@ -1,7 +1,7 @@
 #include "SemanticAnalyzer.h"
 #include <iostream>
 
-using namespace std;
+using std::cout;
 
 void SemanticAnalyzer::process() {
     for (const Statement &statement : program.statements) {

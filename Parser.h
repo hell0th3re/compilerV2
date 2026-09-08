@@ -1,7 +1,6 @@
 #ifndef COMPILERV2_PARSER_H
 #define COMPILERV2_PARSER_H
 #include <memory>
-#include <optional>
 #include <variant>
 #include <vector>
 #include "Token.h"

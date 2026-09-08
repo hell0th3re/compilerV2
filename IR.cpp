@@ -40,6 +40,10 @@ void IRGenerator::generateStatement(const Statement &statement) {
             const WhileLoop &whileLoop = std::get<WhileLoop>(statement.value);
             generateWhile(whileLoop);
         }
+        else if (std::holds_alternative<ForLoop>(statement.value)) {
+            const ForLoop &forLoop = std::get<ForLoop>(statement.value);
+            generateFor(forLoop);
+        }
 }
 
 void IRGenerator::generateAssignment(const Assignment &assignment) {
@@ -107,6 +111,62 @@ void IRGenerator::generateIf(const IfStatement &ifStatement) {
         irProg.instructions.push_back(endLabel);
     }
 
+}
+
+void IRGenerator::generateFor(const ForLoop &forLoop) {
+    //get a value into a variable
+    //place a startLabel
+    //check the condition, if false jump to endLabel
+    //do stuff
+    //place an incrementLabel (will be useful for continues)
+    //increment
+    //jump to the start
+    //place the endLabel
+
+   IRValue initExprVal = generateExpression(*forLoop.declaration.initializer);
+
+    IRInstruction placeVarInstruction;
+    placeVarInstruction.op = IROp::Move;
+    placeVarInstruction.left = initExprVal;
+    placeVarInstruction.destination = forLoop.declaration.name;
+
+    irProg.instructions.push_back(placeVarInstruction);
+
+    IRInstruction entryLabel;
+    entryLabel.destination = newLabel();
+    entryLabel.op = IROp::Label;
+    irProg.instructions.push_back(entryLabel);
+
+    IRInstruction exitLabel;
+    exitLabel.op = IROp::Label;
+    exitLabel.destination = newLabel();
+
+    IRInstruction conditionCheck;
+    conditionCheck.op = IROp::JumpIfFalse;
+    conditionCheck.left = generateExpression(forLoop.condition);
+    conditionCheck.destination = exitLabel.destination;
+    irProg.instructions.push_back(conditionCheck);
+
+    for (auto &statement : forLoop.forBlock->statements) {
+        generateStatement(statement);
+    }
+
+    IRInstruction incrementLabel;
+    incrementLabel.op = IROp::Label;
+    incrementLabel.destination = newLabel();
+
+    irProg.instructions.push_back(incrementLabel);
+
+    IRInstruction incrementInstruction;
+    generateAssignment(forLoop.action);
+
+
+    IRInstruction jumpBack;
+    jumpBack.op = IROp::Jump;
+    jumpBack.destination = entryLabel.destination;
+    irProg.instructions.push_back(jumpBack);
+
+    irProg.instructions.push_back(exitLabel);
 }
 
 void IRGenerator::generateWhile(const WhileLoop &whileLoop) {

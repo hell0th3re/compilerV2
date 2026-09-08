@@ -71,13 +71,13 @@ class IRGenerator {
     int labelCounter;
     Program parsedProg;
     IRProgram irProg;
-    //bool exitProg = false;
     void process();
     IRValue generateExpression(const Expression &expr);
     void generateStatement(const Statement &statement);
     void generateAssignment(const Assignment &assignment);
     void generateIf(const IfStatement &ifStatement);
     void generateWhile(const WhileLoop &whileLoop);
+    void generateFor(const ForLoop &forLoop);
     void generateExit(const Exit &exitCall);
     std::string newTemporary();
     std::string newLabel();
