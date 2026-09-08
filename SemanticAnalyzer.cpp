@@ -39,6 +39,11 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
             const WhileLoop &whileLoop = std::get<WhileLoop>(statement.value);
             processWhileLoop(whileLoop);
         }
+
+        else if (holds_alternative<ForLoop>(statement.value)) {
+            const ForLoop &forLoop = std::get<ForLoop>(statement.value);
+            processForLoop(forLoop);
+        }
 }
 
 void SemanticAnalyzer::processExit(const Exit &exitCall) {
@@ -178,6 +183,22 @@ void SemanticAnalyzer::processWhileLoop(const WhileLoop &whileLoop) {
     }
 
     processBlock(*whileLoop.whileBlock);
+}
+
+void SemanticAnalyzer::processForLoop(const ForLoop &forLoop) {
+    processVariableDeclaration(forLoop.declaration);
+    TokenType conditionType = getExpressionType(forLoop.condition);
+
+    if (conditionType != TokenType::BoolType && conditionType != TokenType::Undefined) {
+        diagnostics.error(
+            "Condition must be of bool type",
+            forLoop.condition.location
+        );
+    }
+
+    processBlock(*forLoop.forBlock);
+    processAssignment(forLoop.action); //technically it is reassignment, but the error message is still weird
+
 }
 
 TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {

@@ -121,6 +121,7 @@ Statement Parser::parseForLoop() {
 
         if (std::holds_alternative<VariableDeclaration>(declStat.value)) {
             VariableDeclaration loopVar = std::move(std::get<VariableDeclaration>(declStat.value));
+            //loopVar.initialiser == nullptr should be an error, might leave it for semantic analisis
             forLoop.declaration = std::move(loopVar);
         }
     }
@@ -149,6 +150,9 @@ Statement Parser::parseForLoop() {
     forLoop.action = std::move(assignment);
     //for(int a = 5; a > 1; a = a+1)
 
+    if (!consume(TokenType::CloseParen)) {
+        synchronise();
+    }
     block.location = peek().location;
     if (!consume(TokenType::OpenBraces)) {
         synchronise();
@@ -159,7 +163,12 @@ Statement Parser::parseForLoop() {
     }
 
     consume(TokenType::CloseBraces);
+
+    forLoop.forBlock = std::make_unique<Block>(std::move(block));
+    statement.value = std::move(forLoop);
+
     //for(int a = 5; a > 1; a = a+1){...}
+    return statement;
 }
 
 Statement Parser::parseWhileLoop() {

@@ -70,7 +70,7 @@ struct ForLoop {
     VariableDeclaration declaration;
     Expression condition;
     Assignment action;
-    std::unique_ptr<Block> ForBlock;
+    std::unique_ptr<Block> forBlock;
     Location location;
 };
 
@@ -85,6 +85,7 @@ struct Statement {
         Exit,
         IfStatement,
         WhileLoop,
+        ForLoop,
         ErrorStatement
     > value;
 };
