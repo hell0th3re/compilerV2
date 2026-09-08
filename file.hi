@@ -1,6 +1,8 @@
-int a = 1;
-while(a<5){
-    a = a + 1;
+int a;
+int b = 1;
+
+while(b<5){
+    a = 1;
 }
 
 exit a;

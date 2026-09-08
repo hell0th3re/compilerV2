@@ -16,6 +16,8 @@ struct BasicBlock {
 class CFGBuilder {
     std::vector<std::string> uninitialised;
     void analyze();
+    void allVal(int blockID);
+    std::set<std::string> allValues;
     std::map<int, std::set<std::string>> in;
     std::map<int, std::set<std::string>> out;
     void checkRead(const IRValue &value, const std::set<std::string> &state);

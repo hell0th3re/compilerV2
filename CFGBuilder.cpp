@@ -223,10 +223,37 @@ InitSet CFGBuilder::transfer(const BasicBlock &block, InitSet state) {
     return state;
 }
 
+void CFGBuilder::allVal(int blockID) {
+
+    for (const auto &instruction : blocks.at(blockID).instructions) {
+        switch (instruction.op) {
+            case IROp::Move:
+            case IROp::Add:
+            case IROp::Subtract:
+            case IROp::Multiply:
+            case IROp::Divide:
+            case IROp::CompareEqual:
+            case IROp::CompareNotEqual:
+            case IROp::CompareLess:
+            case IROp::CompareGreater:
+            case IROp::And:
+            case IROp::Or:
+            case IROp::Not:
+                allValues.insert(instruction.destination);
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+
 void CFGBuilder::analyze() {
     for (const auto& block : blocks) {
-        in.insert({block.id, InitSet{}}); //maybe emplace? not sure
-        out.insert({block.id, InitSet{}});
+        // Fix: "in.insert({block.id, InitSet{}});" was intersecting new values with an empty set, losing data
+        allVal(block.id);
+        in[block.id] = block.id == 0 ? InitSet{} : allValues;
+        out[block.id] = block.id == 0 ? InitSet{} : allValues;
     }
 
     bool changed = true;
@@ -276,6 +303,7 @@ std::vector<BasicBlock> CFGBuilder::build() {
     out.clear();
     uninitialised.clear();
     labelToBlock.clear();
+    allValues.clear();
     makeBlocks();
     setSuccessors();
 
