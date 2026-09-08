@@ -22,6 +22,7 @@ class Lexer {
         {"if", TokenType::If},
         {"else", TokenType::Else},
         {"while", TokenType::While},
+        {"for", TokenType::For},
         {"=", TokenType::Assign},
         {"+", TokenType::Add},
         {"-", TokenType::Subtract},

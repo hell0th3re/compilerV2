@@ -66,6 +66,14 @@ struct WhileLoop {
     Location location;
 };
 
+struct ForLoop {
+    VariableDeclaration declaration;
+    Expression condition;
+    Assignment action;
+    std::unique_ptr<Block> ForBlock;
+    Location location;
+};
+
 struct ErrorStatement {
     Location location;
 };
@@ -106,6 +114,7 @@ class Parser {
     void synchronise();
     Statement parseIfStatement();
     Statement parseWhileLoop();
+    Statement parseForLoop();
     Statement parseExit();
     Statement parseDeclaration();
     Statement parseAssignment();

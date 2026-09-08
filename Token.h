@@ -13,6 +13,7 @@ enum class TokenType {
     If,
     Else,
     While,
+    For,
 
     //Literials
     Integer,
@@ -82,6 +83,10 @@ inline std::string tokenTypeToString(TokenType type) {
             return "If";
         case TokenType::Else:
             return "Else";
+        case TokenType::While:
+            return "While";
+        case TokenType::For:
+            return "For";
         case TokenType::OpenBraces:
             return "OpenBraces";
         case TokenType::CloseBraces:

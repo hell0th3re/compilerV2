@@ -86,6 +86,9 @@ Statement Parser::parseStatement() {
     else if (peek().type == TokenType::While) {
         statement = parseWhileLoop();
     }
+    else if (peek().type == TokenType::For) {
+        statement = parseForLoop();
+    }
     else {
         ErrorStatement error{};
         error.location = peek().location;
@@ -99,6 +102,64 @@ Statement Parser::parseStatement() {
         synchronise();
     }
     return statement;
+}
+
+Statement Parser::parseForLoop() {
+    Statement statement;
+    Block block;
+    ForLoop forLoop;
+
+    forLoop.location = peek().location;
+    consume(TokenType::For);
+
+    if (!consume(TokenType::OpenParen)) {
+        synchronise();
+    }
+
+    if (check(TokenType::IntType)) {
+        Statement declStat = parseDeclaration();
+
+        if (std::holds_alternative<VariableDeclaration>(declStat.value)) {
+            VariableDeclaration loopVar = std::move(std::get<VariableDeclaration>(declStat.value));
+            forLoop.declaration = std::move(loopVar);
+        }
+    }
+    else {
+        synchronise();
+    }
+    //for(int a = 5; ...
+    Expression condition = parseLogicOr();
+    if (!consume(TokenType::Semicolon)) {
+        synchronise();
+    }
+    forLoop.condition = std::move(condition);
+    //for(int a = 5; a > 1; ...
+
+    Assignment assignment;
+
+    assignment.name = peek().value;
+    assignment.location = peek().location;
+    if (!consume(TokenType::Identifier)) {
+        synchronise();
+    }
+    if (!consume(TokenType::Assign)) {
+        synchronise();
+    }
+    assignment.value = parseLogicOr();
+    forLoop.action = std::move(assignment);
+    //for(int a = 5; a > 1; a = a+1)
+
+    block.location = peek().location;
+    if (!consume(TokenType::OpenBraces)) {
+        synchronise();
+    }
+
+    while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
+        block.statements.push_back(parseStatement());
+    }
+
+    consume(TokenType::CloseBraces);
+    //for(int a = 5; a > 1; a = a+1){...}
 }
 
 Statement Parser::parseWhileLoop() {
