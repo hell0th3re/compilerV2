@@ -1,7 +1,11 @@
-int b = 1;
+int a = 1;
 
 for(int i = 0; i < 5; i = i+1){
-    int c = 2;
+    int b = 1;
+    while(b<5){
+        a = a+2;
+        b = b+1;
+    }
 }
 
-exit b;
+exit a;

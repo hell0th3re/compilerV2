@@ -28,6 +28,8 @@ bool Parser::isStatementBoundary(TokenType type) const {
              peek().type == TokenType::Identifier ||
              peek().type == TokenType::Exit ||
              peek().type == TokenType::If ||
+             peek().type == TokenType::While ||
+             peek().type == TokenType::For ||
              peek().type == TokenType::CloseBraces ||
              peek().type == TokenType::Eof
     );
