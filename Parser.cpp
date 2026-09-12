@@ -22,7 +22,7 @@ bool Parser::isAtEnd() const {
 
 bool Parser::isStatementBoundary(TokenType type) const {
     bool boundaryCheck = (
-             //peek().type == TokenType::Let ||
+             peek().type == TokenType::Semicolon ||
              peek().type == TokenType::IntType ||
              peek().type == TokenType::CharType ||
              peek().type == TokenType::Identifier ||
@@ -30,6 +30,9 @@ bool Parser::isStatementBoundary(TokenType type) const {
              peek().type == TokenType::If ||
              peek().type == TokenType::While ||
              peek().type == TokenType::For ||
+             peek().type == TokenType::OpenParen ||
+             peek().type == TokenType::CloseParen ||
+             peek().type == TokenType::OpenBraces ||
              peek().type == TokenType::CloseBraces ||
              peek().type == TokenType::Eof
     );
@@ -50,15 +53,14 @@ bool Parser::consume(TokenType type){
 }
 
 void Parser::parseProgram(){
-    std::cout << " ";
     while (!isAtEnd()) {
-        std::cout << " ";
         Statement statement = parseStatement();
         program.statements.push_back(std::move(statement));
     }
 }
 
 void Parser::synchronise() {
+    advance();
     while (!isStatementBoundary(peek().type)) {
         advance();
     }
@@ -394,11 +396,11 @@ Statement Parser::parseVariableDeclaration(std::string name, TokenType type, Loc
     var.name = std::move(name);
     var.type = type;
 
-    if(consume(TokenType::Assign)) {
+    if(check(TokenType::Assign)) {
         std::unique_ptr<Expression>ex = std::make_unique<Expression>(parseLogicOr());
         var.initializer = std::move(ex);
     }
-
+    TokenType rth = peek().type;
     if (!consume(TokenType::Semicolon)) {
         synchronise();
     }
