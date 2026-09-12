@@ -20,7 +20,7 @@ bool Parser::isAtEnd() const {
     return peek().type == TokenType::Eof;
 }
 
-bool Parser::isStatementBoundary(TokenType type) const {
+bool Parser::isStatementBoundary() const {
     bool boundaryCheck = (
              peek().type == TokenType::Semicolon ||
              peek().type == TokenType::IntType ||
@@ -61,7 +61,7 @@ void Parser::parseProgram(){
 
 void Parser::synchronise() {
     advance();
-    while (!isStatementBoundary(peek().type)) {
+    while (!isStatementBoundary()) {
         advance();
     }
 }
