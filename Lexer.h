@@ -45,6 +45,7 @@ class Lexer {
         {"true", TokenType::Boolean},
         {"false", TokenType::Boolean},
         {":", TokenType::Colon},
+        {",", TokenType::Comma},
         {";", TokenType::Semicolon}
     };
     static bool isIdentifier(const std::string &word);

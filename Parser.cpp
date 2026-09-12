@@ -22,7 +22,7 @@ bool Parser::isAtEnd() const {
 
 bool Parser::isStatementBoundary(TokenType type) const {
     bool boundaryCheck = (
-             peek().type == TokenType::Let ||
+             //peek().type == TokenType::Let ||
              peek().type == TokenType::IntType ||
              peek().type == TokenType::CharType ||
              peek().type == TokenType::Identifier ||
@@ -50,7 +50,9 @@ bool Parser::consume(TokenType type){
 }
 
 void Parser::parseProgram(){
+    std::cout << " ";
     while (!isAtEnd()) {
+        std::cout << " ";
         Statement statement = parseStatement();
         program.statements.push_back(std::move(statement));
     }
@@ -291,23 +293,108 @@ Statement Parser::parseExit() {
 
 Statement Parser::parseDeclaration() {
     Statement statement;
-    VariableDeclaration var;
 
-    var.type = parseType();
+    //Info for both variable and function declarations
+    std::string name;
+    TokenType type = parseType();
 
-    //consume(peek().type); - done in parseType
     if (check(TokenType::Identifier)) {
-        var.name = peek().value;
+        name = peek().value;
     }
 
-    var.location = peek().location;
+    Location location = peek().location;
 
     if (!consume(TokenType::Identifier)) {
         synchronise();
     }
 
+    if (check(TokenType::OpenParen)) {
+        FunctionDeclaration fun = parseFunctionDeclaration(name, type, location);
+        statement.value = std::move(fun);
+        return statement;
+    }
+    statement = parseVariableDeclaration(name, type, location);
+    return statement;
+}
+
+FunctionDeclaration Parser::parseFunctionDeclaration(std::string name, TokenType type, Location location) {
+    FunctionDeclaration fun;
+    Block funBlock;
+
+    fun.name = std::move(name);
+    fun.retType = type;
+    fun.location = location;
+
+    consume(TokenType::OpenParen);
+
+    while (peek().type != TokenType::CloseParen && peek().type != TokenType::Eof) {
+        VariableDeclaration param = parseParameter();
+        fun.params.push_back(std::move(param));
+        //seems like a goofy way of doing that
+        if (check(TokenType::CloseParen)) {
+            break;
+        }
+        if (!consume(TokenType::Comma)) {
+            synchronise();
+        }
+    }
+
+    if (!consume(TokenType::CloseParen)) {
+        synchronise();
+    }
+
+    if (!consume(TokenType::OpenBraces)) {
+        synchronise();
+    }
+
+    while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
+        funBlock.statements.push_back(parseStatement());
+    }
+    fun.body = std::make_unique<Block>(std::move(funBlock));
+
+    if (!consume(TokenType::CloseBraces)) {
+        synchronise();
+    }
+
+    return fun;
+}
+
+VariableDeclaration Parser::parseParameter() {
+    VariableDeclaration var;
+
+    std::string name;
+    TokenType type = parseType();
+    Location location{};
+    if (check(TokenType::Identifier)) {
+        location = peek().location;
+        name = peek().value;
+        consume(TokenType::Identifier);
+    }
+    else {
+        location = peek().location;
+        synchronise();
+    }
+
     if (check(TokenType::Assign)) {
         consume(TokenType::Assign);
+        var.initializer = std::make_unique<Expression>(parseLogicOr());
+    }
+
+    var.location = location;
+    var.name = name;
+    var.type = type;
+    return var;
+}
+
+Statement Parser::parseVariableDeclaration(std::string name, TokenType type, Location location) {
+    VariableDeclaration var;
+    Statement statement;
+
+    var.location = location;
+    var.name = std::move(name);
+    var.type = type;
+
+    if(consume(TokenType::Assign)) {
         std::unique_ptr<Expression>ex = std::make_unique<Expression>(parseLogicOr());
         var.initializer = std::move(ex);
     }

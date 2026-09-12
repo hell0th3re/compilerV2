@@ -151,7 +151,8 @@ void Lexer::tokenize() {
             ch == '<' ||
             ch == '!' ||
             ch == '&' ||
-            ch == '|'
+            ch == '|' ||
+            ch == ','
             );
 
         if (isSeparator) {

@@ -14,6 +14,7 @@ enum class TokenType {
     Else,
     While,
     For,
+    Return,
 
     //Literials
     Integer,
@@ -42,6 +43,7 @@ enum class TokenType {
     //Punctuation
     Colon,
     Semicolon,
+    Comma,
 
     //Other
     Identifier,
@@ -65,6 +67,8 @@ inline std::string tokenTypeToString(TokenType type) {
             return "BoolType";
         case TokenType::Colon:
             return "Colon";
+        case TokenType::Comma:
+            return "Comma";
         case TokenType::Assign:
             return "Assign";
         case TokenType::Equals:
