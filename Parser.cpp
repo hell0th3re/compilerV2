@@ -397,8 +397,8 @@ Statement Parser::parseVariableDeclaration(std::string name, TokenType type, Loc
     var.type = type;
 
     if(check(TokenType::Assign)) {
-        std::unique_ptr<Expression>ex = std::make_unique<Expression>(parseLogicOr());
-        var.initializer = std::move(ex);
+        consume(TokenType::Assign);
+        var.initializer = std::make_unique<Expression>(parseLogicOr());
     }
     TokenType rth = peek().type;
     if (!consume(TokenType::Semicolon)) {
