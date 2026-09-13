@@ -11,4 +11,4 @@ int f(int a, int b){
     }
 }
 
-int u = f(a,3*2);
+int h = f(a,3*2) * 2;

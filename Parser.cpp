@@ -403,7 +403,6 @@ Statement Parser::parseVariableDeclaration(std::string name, TokenType type, Loc
         consume(TokenType::Assign);
         var.initializer = std::make_unique<Expression>(parseLogicOr());
     }
-    TokenType rth = peek().type;
     if (!consume(TokenType::Semicolon)) {
         synchronise();
     }
@@ -444,8 +443,12 @@ Statement Parser::parseOperation() {
     }
 
     if (check(TokenType::OpenParen)) {
-        FunctionCall fCall = parseFunctionCall(name, location);
-        statement.value = std::move(fCall);
+        //FunctionCall fCall = parseFunctionCall(name, location);
+        auto fCall = std::make_unique<FunctionCall>(parseFunctionCall(name, location));
+        Expression ex;
+        ex.value = std::move(fCall);
+        ex.location = location;
+        statement.value = std::move(ex);
 
         if (!consume(TokenType::Semicolon)) {
             synchronise();
@@ -489,7 +492,7 @@ FunctionCall Parser::parseFunctionCall(std::string name, Location location) {
     }
 
     while (!check(TokenType::CloseParen)) {
-        arguments.push_back(parseExpression());
+        arguments.push_back(parseLogicOr());
 
         if (check(TokenType::CloseParen)) {
             break;
@@ -715,8 +718,18 @@ Expression Parser::parseFactor() {
         advance();
     }
     else if (check(TokenType::Identifier)) {
-        result.value = peek().value;
+        //result.value = peek().value;
+        std::string name = peek().value;
+        Location location = peek().location;
+
         advance();
+        if (peek().type == TokenType::OpenParen) {
+            result.value = std::make_unique<FunctionCall>(parseFunctionCall(name, location));
+        }
+        else {
+            result.value = name;
+            result.location = location;
+        }
     }
     else {
         ErrorExpression error{};

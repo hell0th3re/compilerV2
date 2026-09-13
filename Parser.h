@@ -24,10 +24,18 @@ struct ErrorExpression {
     Location location;
 };
 
+struct FunctionCall {
+    std::string name;
+    std::vector<Expression> arguments;
+    Location location;
+};
+
+
 struct Expression {
     std::variant<int, char, bool, std::string,
     std::unique_ptr<BinaryExpression>,
     std::unique_ptr<UnaryExpression>,
+    std::unique_ptr<FunctionCall>,
     ErrorExpression> value;
     Location location;
 };
@@ -81,12 +89,6 @@ struct FunctionDeclaration {
     Location location;
 };
 
-struct FunctionCall {
-    std::string name;
-    std::vector<Expression> arguments;
-    Location location;
-};
-
 struct ErrorStatement {
     Location location;
 };
@@ -99,9 +101,9 @@ struct Statement {
         IfStatement,
         WhileLoop,
         ForLoop,
+        Expression,
         ErrorStatement,
-        FunctionDeclaration,
-        FunctionCall
+        FunctionDeclaration
     > value;
 };
 
