@@ -83,7 +83,8 @@ struct FunctionDeclaration {
 
 struct FunctionCall {
     std::string name;
-    std::vector<VariableDeclaration> params;
+    std::vector<Expression> arguments;
+    Location location;
 };
 
 struct ErrorStatement {
@@ -133,9 +134,11 @@ class Parser {
     Statement parseExit();
     Statement parseDeclaration();
     FunctionDeclaration parseFunctionDeclaration(std::string name, TokenType type, Location location);
+    FunctionCall parseFunctionCall(std::string name, Location location);
     VariableDeclaration parseParameter();
     Statement parseVariableDeclaration(std::string name, TokenType type, Location location);
-    Statement parseAssignment();
+    Statement parseOperation();
+    Assignment parseAssignment(std::string name, Location location);
     Expression parseUnary();
     Expression parseLogicOr();
     Expression parseLogicAnd();

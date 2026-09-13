@@ -1,3 +1,14 @@
+int g = 1;
 int f(int a, int b){
-    int c = 2;
+    int c = a;
+    int d = b*2;
+
+    if (c>2){
+        exit g;
+    }
+    else{
+        exit d;
+    }
 }
+
+int u = f(a,3*2);

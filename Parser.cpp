@@ -81,7 +81,7 @@ Statement Parser::parseStatement() {
         statement = parseDeclaration();
     }
     else if (peek().type == TokenType::Identifier) {
-        statement = parseAssignment();
+        statement = parseOperation();
     }
     else if (peek().type == TokenType::Exit) {
         statement = parseExit();
@@ -378,8 +378,11 @@ VariableDeclaration Parser::parseParameter() {
     }
 
     if (check(TokenType::Assign)) {
-        consume(TokenType::Assign);
-        var.initializer = std::make_unique<Expression>(parseLogicOr());
+        diagnostics.error(
+            "Initialisation of function parameters is not allowed",
+            peek().location
+        );
+        synchronise();
     }
 
     var.location = location;
@@ -429,25 +432,77 @@ TokenType Parser::parseType(){
     return TokenType::Undefined;
 }
 
-Statement Parser::parseAssignment() {
+Statement Parser::parseOperation() {
 
     Statement statement;
-    Assignment assignment;
 
-    assignment.name = peek().value;
-    assignment.location = peek().location;
+    std::string name = peek().value;
+    Location location = peek().location;
+
     if (!consume(TokenType::Identifier)) {
         synchronise();
     }
-    if (!consume(TokenType::Assign)) {
+
+    if (check(TokenType::OpenParen)) {
+        FunctionCall fCall = parseFunctionCall(name, location);
+        statement.value = std::move(fCall);
+
+        if (!consume(TokenType::Semicolon)) {
+            synchronise();
+        }
+    }
+
+    else if (check(TokenType::Assign)) {
+        Assignment asig = parseAssignment(name, location);
+        statement.value = std::move(asig);
+
+        if (!consume(TokenType::Semicolon)) {
+            synchronise();
+        }
+    }
+    else {
         synchronise();
     }
-    assignment.value = parseLogicOr();
-    if (!consume(TokenType::Semicolon)) {
-        synchronise();
-    }
-    statement.value = std::move(assignment);
+
     return statement;
+}
+
+Assignment Parser::parseAssignment(std::string name, Location location) {
+    Assignment assignment;
+
+    assignment.name = std::move(name);
+    assignment.location = location;
+    assignment.value = parseLogicOr();
+
+    return assignment;
+}
+
+FunctionCall Parser::parseFunctionCall(std::string name, Location location) {
+    FunctionCall fCall;
+    fCall.location = location;
+    fCall.name = std::move(name);
+
+    std::vector<Expression> arguments;
+
+    if (!consume(TokenType::OpenParen)) {
+        synchronise();
+    }
+
+    while (!check(TokenType::CloseParen)) {
+        arguments.push_back(parseExpression());
+
+        if (check(TokenType::CloseParen)) {
+            break;
+        }
+        if (!consume(TokenType::Comma)) {
+            synchronise();
+        }
+    }
+
+    consume(TokenType::CloseParen);
+
+    fCall.arguments = std::move(arguments);
+    return fCall;
 }
 
 Expression Parser::parseUnary() {

@@ -44,6 +44,18 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
             const ForLoop &forLoop = std::get<ForLoop>(statement.value);
             processForLoop(forLoop);
         }
+
+        else if (std::holds_alternative<FunctionDeclaration>(statement.value)) {
+            const FunctionDeclaration &functionDecl = std::get<FunctionDeclaration>(statement.value);
+            processFunctionDeclaration(functionDecl);
+        }
+}
+
+void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &functionDeclaration) {
+    for (const auto &param : functionDeclaration.params) {
+        processVariableDeclaration(param);
+    }
+    processBlock(*functionDeclaration.body);
 }
 
 void SemanticAnalyzer::processExit(const Exit &exitCall) {
