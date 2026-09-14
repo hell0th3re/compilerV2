@@ -1,16 +1,6 @@
-int g = 1;
+
 int f(int a, int b){
-    int c = a;
-    int d = b*2;
-
-    if (c>2){
-        exit g;
-    }
-    else{
-        exit d;
-    }
-
-    return a;
+    return a*2;
 }
 
 int h = f(g,3*2) * 2;

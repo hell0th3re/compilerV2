@@ -52,11 +52,15 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
 }
 
 void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &functionDeclaration) {
-
     enterScope();
-    //processFunctionCall should initialise those variables
+    //params already initialised when entering the functions
     for (const auto &param : functionDeclaration.params) {
-        processVariableDeclaration(param);
+        Symbol paramSymbol{};
+        paramSymbol.initialised = true;
+        paramSymbol.type = param.type;
+
+        //directly declare params
+        declare(param.name, paramSymbol);
     }
 
     //body doesnt contain the return statement
@@ -73,7 +77,7 @@ void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &fun
         return;
     }
     //dereference
-    Expression retValExpression = std::move(*functionDeclaration.retValue.value);
+    const Expression &retValExpression = *functionDeclaration.retValue.value;
     TokenType expressionType = getExpressionType(retValExpression);
     if (expressionType == TokenType::Undefined) {
         return;
@@ -96,23 +100,6 @@ void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &fun
                     "Cannot return the a function parameter directly",
                     functionDeclaration.retValue.location
                 );
-            }
-        }
-    }
-
-}
-
-void SemanticAnalyzer::processFunctionCall(const FunctionCall &functionCall) {
-    //initialise the argu
-    std::vector<std::string> args;
-
-    for (int i = 0; i < scopes.size(); i++) {
-        if (scopes.at(i).symbols.contains(functionCall.name)) {
-
-            scopes.at(i).symbols.at(functionCall.name);
-            for (const auto &argument : functionCall.arguments) {
-                //the idea is:
-                //scopes.at(i).symbols.at(functionCall.name).params.initialised = true;
             }
         }
     }
@@ -169,6 +156,14 @@ void SemanticAnalyzer::processVariableDeclaration(const VariableDeclaration &dec
     declarationSym.type = declaration.type;
     if (declaration.initializer != nullptr) {
         declarationSym.initialised = true;
+        TokenType initialiserExpType = getExpressionType(*declaration.initializer);
+        if (initialiserExpType != declaration.type) {
+            diagnostics.error(
+                "Type error: Expected " + tokenTypeToString(declaration.type)
+                + " got " + tokenTypeToString(initialiserExpType),
+                declaration.location
+            );
+        }
     }
     else {
         declarationSym.initialised = false;
@@ -306,6 +301,15 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
             }
             return temp->type;
         }
+    }
+
+    if (std::holds_alternative<std::unique_ptr<FunctionCall>>(expression.value)) {
+        //not sure if this get called for with the function expected return type of actual return value
+        const FunctionCall &functionCall = *std::get<std::unique_ptr<FunctionCall>>(expression.value);
+        for (const auto &argument : functionCall.arguments) {
+            getExpressionType(argument);
+        }
+        //??? idk what im doing ill come back to it tmr
     }
 
     if (holds_alternative<std::unique_ptr<UnaryExpression>>(expression.value)) {

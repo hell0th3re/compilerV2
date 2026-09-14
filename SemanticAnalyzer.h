@@ -29,7 +29,7 @@ class SemanticAnalyzer {
     void enterScope();
     void leaveScope();
     bool declare(const std::string &name, const Symbol &symbol);
-    const Symbol *lookup(const std::string &name) const;
+    [[nodiscard]] const Symbol *lookup(const std::string &name) const;
     Symbol *lookup(const std::string &name);
     void processBlock(const Block &block);
     void processStatement(const Statement &statement);
@@ -37,7 +37,7 @@ class SemanticAnalyzer {
     void processWhileLoop(const WhileLoop &whileLoop);
     void processForLoop(const ForLoop &forLoop);
     void processFunctionDeclaration(const FunctionDeclaration &functionDeclaration);
-    void processFunctionCall(const FunctionCall &functionCall);
+    //void processFunctionCall(const FunctionCall &functionCall);
     void processVariableDeclaration(const VariableDeclaration &declaration);
     void processAssignment(const Assignment &assignment);
     void processExit(const Exit &exitCall);
