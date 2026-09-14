@@ -37,6 +37,7 @@ class SemanticAnalyzer {
     void processWhileLoop(const WhileLoop &whileLoop);
     void processForLoop(const ForLoop &forLoop);
     void processFunctionDeclaration(const FunctionDeclaration &functionDeclaration);
+    void processFunctionCall(const FunctionCall &functionCall);
     void processVariableDeclaration(const VariableDeclaration &declaration);
     void processAssignment(const Assignment &assignment);
     void processExit(const Exit &exitCall);

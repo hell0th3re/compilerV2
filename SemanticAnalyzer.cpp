@@ -53,16 +53,13 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
 
 void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &functionDeclaration) {
 
-
     enterScope();
-
+    //processFunctionCall should initialise those variables
     for (const auto &param : functionDeclaration.params) {
         processVariableDeclaration(param);
     }
 
     //body doesnt contain the return statement
-    //processBlock(*functionDeclaration.body);
-
     for (const auto &blockStatement : functionDeclaration.body->statements) {
         processStatement(blockStatement);
     }
@@ -88,6 +85,37 @@ void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &fun
         );
     }
     leaveScope();
+
+    if (std::holds_alternative<std::string>(functionDeclaration.retValue.value->value)) {
+        std::string retValueVarName = std::get<std::string>(functionDeclaration.retValue.value->value);
+
+        for (int i = 0; i < functionDeclaration.params.size(); i++) {
+            if (functionDeclaration.params.at(i).name == retValueVarName) {
+                //should be a warning, but for now you really just cant do that or everything breaks
+                diagnostics.error(
+                    "Cannot return the a function parameter directly",
+                    functionDeclaration.retValue.location
+                );
+            }
+        }
+    }
+
+}
+
+void SemanticAnalyzer::processFunctionCall(const FunctionCall &functionCall) {
+    //initialise the argu
+    std::vector<std::string> args;
+
+    for (int i = 0; i < scopes.size(); i++) {
+        if (scopes.at(i).symbols.contains(functionCall.name)) {
+
+            scopes.at(i).symbols.at(functionCall.name);
+            for (const auto &argument : functionCall.arguments) {
+                //the idea is:
+                //scopes.at(i).symbols.at(functionCall.name).params.initialised = true;
+            }
+        }
+    }
 }
 
 void SemanticAnalyzer::processExit(const Exit &exitCall) {
