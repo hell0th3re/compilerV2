@@ -23,6 +23,7 @@ class Lexer {
         {"else", TokenType::Else},
         {"while", TokenType::While},
         {"for", TokenType::For},
+        {"return", TokenType::Return},
         {"=", TokenType::Assign},
         {"+", TokenType::Add},
         {"-", TokenType::Subtract},

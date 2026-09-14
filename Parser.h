@@ -81,11 +81,17 @@ struct ForLoop {
     Location location;
 };
 
+struct Return {
+    Expression value;
+    Location location;
+};
+
 struct FunctionDeclaration {
     TokenType retType;
     std::string name;
     std::vector<VariableDeclaration> params;
     std::unique_ptr<Block> body;
+    Return retValue;
     Location location;
 };
 

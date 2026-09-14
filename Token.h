@@ -91,6 +91,8 @@ inline std::string tokenTypeToString(TokenType type) {
             return "While";
         case TokenType::For:
             return "For";
+        case TokenType::Return:
+            return "return";
         case TokenType::OpenBraces:
             return "OpenBraces";
         case TokenType::CloseBraces:

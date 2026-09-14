@@ -34,6 +34,7 @@ bool Parser::isStatementBoundary() const {
              peek().type == TokenType::CloseParen ||
              peek().type == TokenType::OpenBraces ||
              peek().type == TokenType::CloseBraces ||
+             peek().type == TokenType::Return ||
              peek().type == TokenType::Eof
     );
     return boundaryCheck;
@@ -350,6 +351,16 @@ FunctionDeclaration Parser::parseFunctionDeclaration(std::string name, TokenType
     }
 
     while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
+        if (peek().type == TokenType::Return) {
+            fun.retValue.location = peek().location;
+            consume(TokenType::Return);
+            Expression retExpr = parseLogicOr();
+            fun.retValue.value =  std::move(retExpr);
+            if (!consume(TokenType::Semicolon)) {
+                synchronise();
+            }
+            continue; //forgot if the semicolon is consumed by this point or no
+        }
         funBlock.statements.push_back(parseStatement());
     }
     fun.body = std::make_unique<Block>(std::move(funBlock));

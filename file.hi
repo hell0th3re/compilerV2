@@ -9,6 +9,8 @@ int f(int a, int b){
     else{
         exit d;
     }
+
+    return c;
 }
 
 int h = f(a,3*2) * 2;
