@@ -52,28 +52,42 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
 }
 
 void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &functionDeclaration) {
+
+
+    enterScope();
+
     for (const auto &param : functionDeclaration.params) {
         processVariableDeclaration(param);
     }
 
+    //body doesnt contain the return statement
+    //processBlock(*functionDeclaration.body);
+
+    for (const auto &blockStatement : functionDeclaration.body->statements) {
+        processStatement(blockStatement);
+    }
+
     if (functionDeclaration.retValue.value == nullptr) {
         diagnostics.error(
-          "Function " + functionDeclaration.name + "does not have a return statement",
+          "Function " + functionDeclaration.name + " does not have a return statement",
           functionDeclaration.location
         );
+        //dont dereference a nullptr
+        return;
     }
     //dereference
     Expression retValExpression = std::move(*functionDeclaration.retValue.value);
     TokenType expressionType = getExpressionType(retValExpression);
-
+    if (expressionType == TokenType::Undefined) {
+        return;
+    }
     if (expressionType != functionDeclaration.retType) {
         diagnostics.error(
             "Unexpected return type in function " + functionDeclaration.name,
             functionDeclaration.retValue.location
         );
     }
-    //body doesnt contain the return statement
-    processBlock(*functionDeclaration.body);
+    leaveScope();
 }
 
 void SemanticAnalyzer::processExit(const Exit &exitCall) {
