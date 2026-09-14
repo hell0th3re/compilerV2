@@ -10,7 +10,7 @@ int f(int a, int b){
         exit d;
     }
 
-    return c;
+    return 's';
 }
 
 int h = f(a,3*2) * 2;

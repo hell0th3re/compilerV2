@@ -354,7 +354,7 @@ FunctionDeclaration Parser::parseFunctionDeclaration(std::string name, TokenType
         if (peek().type == TokenType::Return) {
             fun.retValue.location = peek().location;
             consume(TokenType::Return);
-            Expression retExpr = parseLogicOr();
+            auto retExpr = std::make_unique<Expression>(parseLogicOr());
             fun.retValue.value =  std::move(retExpr);
             if (!consume(TokenType::Semicolon)) {
                 synchronise();

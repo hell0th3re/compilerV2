@@ -55,6 +55,24 @@ void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &fun
     for (const auto &param : functionDeclaration.params) {
         processVariableDeclaration(param);
     }
+
+    if (functionDeclaration.retValue.value == nullptr) {
+        diagnostics.error(
+          "Function " + functionDeclaration.name + "does not have a return statement",
+          functionDeclaration.location
+        );
+    }
+    //dereference
+    Expression retValExpression = std::move(*functionDeclaration.retValue.value);
+    TokenType expressionType = getExpressionType(retValExpression);
+
+    if (expressionType != functionDeclaration.retType) {
+        diagnostics.error(
+            "Unexpected return type in function " + functionDeclaration.name,
+            functionDeclaration.retValue.location
+        );
+    }
+    //body doesnt contain the return statement
     processBlock(*functionDeclaration.body);
 }
 

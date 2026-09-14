@@ -82,7 +82,7 @@ struct ForLoop {
 };
 
 struct Return {
-    Expression value;
+    std::unique_ptr<Expression> value;
     Location location;
 };
 
@@ -109,7 +109,8 @@ struct Statement {
         ForLoop,
         Expression,
         ErrorStatement,
-        FunctionDeclaration
+        FunctionDeclaration,
+        Return
     > value;
 };
 
