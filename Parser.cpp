@@ -502,7 +502,7 @@ FunctionCall Parser::parseFunctionCall(std::string name, Location location) {
         synchronise();
     }
 
-    while (!check(TokenType::CloseParen)) {
+    while (!check(TokenType::CloseParen) && !check(TokenType::Eof)) {
         arguments.push_back(parseLogicOr());
 
         if (check(TokenType::CloseParen)) {
@@ -513,7 +513,9 @@ FunctionCall Parser::parseFunctionCall(std::string name, Location location) {
         }
     }
 
-    consume(TokenType::CloseParen);
+    if (!consume(TokenType::CloseParen)) {
+        synchronise();
+    }
 
     fCall.arguments = std::move(arguments);
     return fCall;

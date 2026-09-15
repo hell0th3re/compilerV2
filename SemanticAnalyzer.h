@@ -17,6 +17,11 @@ struct Symbol {
     bool initialised;
 };
 
+struct FunctionSymbol {
+    TokenType returnType;
+    std::vector<TokenType> parameterTypes;
+};
+
 struct Scope {
     std::map<std::string, Symbol> symbols;
 };
@@ -26,6 +31,7 @@ class SemanticAnalyzer {
     void process();
     Diagnostics &diagnostics;
     std::vector<Scope> scopes;
+    std::map<std::string, FunctionSymbol> functions;
     void enterScope();
     void leaveScope();
     bool declare(const std::string &name, const Symbol &symbol);
@@ -37,7 +43,7 @@ class SemanticAnalyzer {
     void processWhileLoop(const WhileLoop &whileLoop);
     void processForLoop(const ForLoop &forLoop);
     void processFunctionDeclaration(const FunctionDeclaration &functionDeclaration);
-    //void processFunctionCall(const FunctionCall &functionCall);
+    void processFunctionCall(const FunctionCall &functionCall);
     void processVariableDeclaration(const VariableDeclaration &declaration);
     void processAssignment(const Assignment &assignment);
     void processExit(const Exit &exitCall);

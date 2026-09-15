@@ -52,6 +52,7 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
 }
 
 void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &functionDeclaration) {
+    FunctionSymbol funcSymbol;
     enterScope();
     //params already initialised when entering the functions
     for (const auto &param : functionDeclaration.params) {
@@ -61,6 +62,8 @@ void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &fun
 
         //directly declare params
         declare(param.name, paramSymbol);
+
+        funcSymbol.parameterTypes.push_back(paramSymbol.type);
     }
 
     //body doesnt contain the return statement
@@ -88,6 +91,7 @@ void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &fun
             functionDeclaration.retValue.location
         );
     }
+    funcSymbol.returnType = functionDeclaration.retType;
     leaveScope();
 
     if (std::holds_alternative<std::string>(functionDeclaration.retValue.value->value)) {
@@ -103,6 +107,8 @@ void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &fun
             }
         }
     }
+
+    functions.insert({functionDeclaration.name,funcSymbol});
 }
 
 void SemanticAnalyzer::processExit(const Exit &exitCall) {
@@ -157,7 +163,7 @@ void SemanticAnalyzer::processVariableDeclaration(const VariableDeclaration &dec
     if (declaration.initializer != nullptr) {
         declarationSym.initialised = true;
         TokenType initialiserExpType = getExpressionType(*declaration.initializer);
-        if (initialiserExpType != declaration.type) {
+        if (initialiserExpType != declaration.type && initialiserExpType != TokenType::Undefined) {
             diagnostics.error(
                 "Type error: Expected " + tokenTypeToString(declaration.type)
                 + " got " + tokenTypeToString(initialiserExpType),
@@ -306,11 +312,45 @@ TokenType SemanticAnalyzer::getExpressionType(const Expression &expression) {
     if (std::holds_alternative<std::unique_ptr<FunctionCall>>(expression.value)) {
         //not sure if this get called for with the function expected return type of actual return value
         const FunctionCall &functionCall = *std::get<std::unique_ptr<FunctionCall>>(expression.value);
-        for (const auto &argument : functionCall.arguments) {
-            getExpressionType(argument);
+
+        //does it exist
+        if (!functions.contains(functionCall.name)) {
+            diagnostics.error(
+                "Function '" + functionCall.name + "' does not exist",
+                functionCall.location
+            );
+            return TokenType::Undefined;
         }
-        //??? idk what im doing ill come back to it tmr
+
+        //is the number of given arguments correct
+        if (functionCall.arguments.size() != functions.at(functionCall.name).parameterTypes.size()) {
+            diagnostics.error(
+                "Function '" + functionCall.name + "' requires " +
+                std::to_string( functions.at(functionCall.name).parameterTypes.size()) +
+                " arguments, got " + std::to_string(functionCall.arguments.size()),
+                functionCall.location
+            );
+            return TokenType::Undefined;
+        }
+
+        //do the arguments match the parameters
+        for (int i = 0; i < functionCall.arguments.size(); i++) {
+            TokenType argExprType = getExpressionType(functionCall.arguments.at(i));
+            if (functions.at(functionCall.name).parameterTypes.at(i) != argExprType) {
+                diagnostics.error(
+                    "Expected parameter of type " +
+                    tokenTypeToString(functions.at(functionCall.name).parameterTypes.at(i)) +
+                    ", got " + tokenTypeToString(argExprType),
+                    functionCall.arguments.at(i).location
+                );
+            }
+        }
+
+        //maybe shouldnt return after issues have been found
+        return functions.at(functionCall.name).returnType;
     }
+
+
 
     if (holds_alternative<std::unique_ptr<UnaryExpression>>(expression.value)) {
 
