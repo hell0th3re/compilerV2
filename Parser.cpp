@@ -96,6 +96,9 @@ Statement Parser::parseStatement() {
     else if (peek().type == TokenType::For) {
         statement = parseForLoop();
     }
+    else if (peek().type == TokenType::Return) {
+        statement = parseReturnStatement();
+    }
     else {
         ErrorStatement error{};
         error.location = peek().location;
@@ -351,16 +354,16 @@ FunctionDeclaration Parser::parseFunctionDeclaration(std::string name, TokenType
     }
 
     while (peek().type != TokenType::CloseBraces && peek().type != TokenType::Eof) {
-        if (peek().type == TokenType::Return) {
-            fun.retValue.location = peek().location;
-            consume(TokenType::Return);
-            auto retExpr = std::make_unique<Expression>(parseLogicOr());
-            fun.retValue.value =  std::move(retExpr);
-            if (!consume(TokenType::Semicolon)) {
-                synchronise();
-            }
-            continue; //forgot if the semicolon is consumed by this point or no
-        }
+        // if (peek().type == TokenType::Return) {
+        //     fun.retValue.location = peek().location;
+        //     consume(TokenType::Return);
+        //     auto retExpr = std::make_unique<Expression>(parseLogicOr());
+        //     fun.retValue.value =  std::move(retExpr);
+        //     if (!consume(TokenType::Semicolon)) {
+        //         synchronise();
+        //     }
+        //     continue; //forgot if the semicolon is consumed by this point or no
+        // }
         funBlock.statements.push_back(parseStatement());
     }
     fun.body = std::make_unique<Block>(std::move(funBlock));
@@ -400,6 +403,18 @@ VariableDeclaration Parser::parseParameter() {
     var.name = name;
     var.type = type;
     return var;
+}
+
+Statement Parser::parseReturnStatement() {
+    ReturnStatement retStatement;
+    consume(TokenType::Return);
+    retStatement.value = std::move(std::make_unique<Expression>(parseLogicOr()));
+    if (!consume(TokenType::Semicolon)) {
+        synchronise();
+    }
+    Statement st;
+    st.value = std::move(retStatement);
+    return st;
 }
 
 Statement Parser::parseVariableDeclaration(std::string name, TokenType type, Location location) {

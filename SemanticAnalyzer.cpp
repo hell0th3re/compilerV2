@@ -49,6 +49,11 @@ void SemanticAnalyzer::processStatement(const Statement &statement) {
             const FunctionDeclaration &functionDecl = std::get<FunctionDeclaration>(statement.value);
             processFunctionDeclaration(functionDecl);
         }
+
+        else if (std::holds_alternative<ReturnStatement>(statement.value)) {
+            const ReturnStatement &returnStatement = std::get<ReturnStatement>(statement.value);
+            getExpressionType(*returnStatement.value);
+        }
 }
 
 void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &functionDeclaration) {
@@ -70,44 +75,8 @@ void SemanticAnalyzer::processFunctionDeclaration(const FunctionDeclaration &fun
     for (const auto &blockStatement : functionDeclaration.body->statements) {
         processStatement(blockStatement);
     }
-
-    if (functionDeclaration.retValue.value == nullptr) {
-        diagnostics.error(
-          "Function " + functionDeclaration.name + " does not have a return statement",
-          functionDeclaration.location
-        );
-        //dont dereference a nullptr
-        return;
-    }
-    //dereference
-    const Expression &retValExpression = *functionDeclaration.retValue.value;
-    TokenType expressionType = getExpressionType(retValExpression);
-    if (expressionType == TokenType::Undefined) {
-        return;
-    }
-    if (expressionType != functionDeclaration.retType) {
-        diagnostics.error(
-            "Unexpected return type in function " + functionDeclaration.name,
-            functionDeclaration.retValue.location
-        );
-    }
     funcSymbol.returnType = functionDeclaration.retType;
     leaveScope();
-
-    if (std::holds_alternative<std::string>(functionDeclaration.retValue.value->value)) {
-        std::string retValueVarName = std::get<std::string>(functionDeclaration.retValue.value->value);
-
-        for (int i = 0; i < functionDeclaration.params.size(); i++) {
-            if (functionDeclaration.params.at(i).name == retValueVarName) {
-                //should be a warning, but for now you really just cant do that or everything breaks
-                diagnostics.error(
-                    "Cannot return the a function parameter directly",
-                    functionDeclaration.retValue.location
-                );
-            }
-        }
-    }
-
     functions.insert({functionDeclaration.name,funcSymbol});
 }
 

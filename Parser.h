@@ -81,7 +81,7 @@ struct ForLoop {
     Location location;
 };
 
-struct Return {
+struct ReturnStatement {
     std::unique_ptr<Expression> value;
     Location location;
 };
@@ -91,7 +91,7 @@ struct FunctionDeclaration {
     std::string name;
     std::vector<VariableDeclaration> params;
     std::unique_ptr<Block> body;
-    Return retValue;
+    //Return retValue;
     Location location;
 };
 
@@ -110,7 +110,7 @@ struct Statement {
         Expression,
         ErrorStatement,
         FunctionDeclaration,
-        Return
+        ReturnStatement
     > value;
 };
 
@@ -143,6 +143,7 @@ class Parser {
     Statement parseExit();
     Statement parseDeclaration();
     FunctionDeclaration parseFunctionDeclaration(std::string name, TokenType type, Location location);
+    Statement parseReturnStatement();
     FunctionCall parseFunctionCall(std::string name, Location location);
     VariableDeclaration parseParameter();
     Statement parseVariableDeclaration(std::string name, TokenType type, Location location);
